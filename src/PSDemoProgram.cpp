@@ -43,6 +43,7 @@
 #include "GVERCommand.hpp"
 #include "ProgramVersion.hpp"
 #include "ScanSequence.hpp"
+#include "ScanPrint.hpp"
 #include "SPRMCommand.hpp"
 
 /**
@@ -153,6 +154,16 @@ testSCAN(ClientSocket& lClientSocket, FILE* theTerminalLogFile)
     lScanSequence.run();
 }
 
+/**
+ */
+void
+testSCPR(ClientSocket& lClientSocket, FILE* theTerminalLogFile)
+{
+    ScanPrint lScanPrint(lClientSocket);
+    lScanPrint.setTerminalLogFile(theTerminalLogFile);
+    lScanPrint.run();
+}
+
 /*
  * Main for a number of tests.
  */
@@ -243,7 +254,8 @@ main(int argc, char **argv)
                 " 1 - GVER: get firmware version\r\n"
                 " 2 - GPRM: Getting a sensor parameter\r\n"
                 " 3 - SPRM: Setting a sensor parameter\r\n"
-                " 4 - SCAN: Starting a scan sequence\r\n\n"
+                " 4 - SCAN: Starting a scan sequence\r\n"
+                " 5 - SCPR: Getting a scan data and print graph\r\n\n"
                 " 0 - Exit\r\n> ");
         fscanf(stdin, "%d", &lSelection);
 
@@ -263,6 +275,10 @@ main(int argc, char **argv)
 
             case 4:
                 testSCAN(lClientSocket, lTerminalLogFile);
+                break;
+
+            case 5:
+                testSCPR(lClientSocket, lTerminalLogFile);
                 break;
 
             case 0:
