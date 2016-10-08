@@ -86,6 +86,9 @@ class GSCNCommand : private CommandBase
                 /** number of points in the scan*/
                 int32_t mNumberOfPoints;
 
+                /** number of echos in the scan*/
+                int32_t mNumberOfEchoes;
+
                 /** array with distances + pulse width */
                 struct
                 {

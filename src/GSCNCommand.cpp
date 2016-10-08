@@ -90,15 +90,15 @@ GSCNCommand::parseScan(Scan_t& theScan)
     }
 
     // get number of echoes. If 0, then the master echo is transfered instead of the number
-    int32_t lNumberOfEchoes = theScan.mParameter[PARAMETER_NUMBER_OF_ECHOES];
-    if (0 == lNumberOfEchoes)
+    theScan.mNumberOfEchoes = theScan.mParameter[PARAMETER_NUMBER_OF_ECHOES];
+    if (0 == theScan.mNumberOfEchoes)
     {
-        lNumberOfEchoes = 1;
+    	theScan.mNumberOfEchoes = 1;
     }
 
     // take number of points, check limits
     theScan.mNumberOfPoints = *lIntegerPtr++;
-    if ((MAX_NUMBER_OF_ECHOS < lNumberOfEchoes) || (MAX_POINTS_PER_SCAN < theScan.mNumberOfPoints))
+    if ((MAX_NUMBER_OF_ECHOS < theScan.mNumberOfEchoes) || (MAX_POINTS_PER_SCAN < theScan.mNumberOfPoints))
     {
         clearScan(theScan);
         return ERR_BUFFER_OVERFLOW;
@@ -118,7 +118,7 @@ GSCNCommand::parseScan(Scan_t& theScan)
             for (int32_t lPoints = 0; lPoints < theScan.mNumberOfPoints; lPoints++)
             {
                 // loop for each point through all echos
-                for (int32_t lEchos = 0; lEchos < lNumberOfEchoes; lEchos++)
+                for (int32_t lEchos = 0; lEchos < theScan.mNumberOfEchoes; lEchos++)
                 {
                     theScan.mScanData[lPoints][lEchos].mDistance = *lIntegerPtr++;
                 } // end echos
@@ -132,7 +132,7 @@ GSCNCommand::parseScan(Scan_t& theScan)
             for (int32_t lPoints = 0; lPoints < theScan.mNumberOfPoints; lPoints++)
             {
                 // loop for each point through all echos
-                for (int32_t lEchos = 0; lEchos < lNumberOfEchoes; lEchos++)
+                for (int32_t lEchos = 0; lEchos < theScan.mNumberOfEchoes; lEchos++)
                 {
                     theScan.mScanData[lPoints][lEchos].mDistance = *lIntegerPtr++;
                     theScan.mScanData[lPoints][lEchos].mPulseWidth = *lIntegerPtr++;

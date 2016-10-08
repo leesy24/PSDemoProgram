@@ -133,8 +133,8 @@ ScanPrint::logTableHeader()
     string128_t lTextLine;
 
     // format
-    sprintf(lTextLine, "\r\n%14s ; %12s; %12s;  %8s;  %8s; %8s;\r\n", //
-            "Time", "Scan", "PS Time", "d Scans", "d Cmds", "Lost scans");
+    sprintf(lTextLine, "\r\n%14s %8s %8s %4s %4s %8s \r\n", //
+            "Time", "Scan", "PS Time", "d-S", "d-C", "Lost-S");
 
     // write to file
     if (0 != mTerminalLogFile)
@@ -160,7 +160,7 @@ ScanPrint::logMessage(const char* const theMessage)
     if (0 != theMessage)
     {
         // format
-        sprintf(lTextLine, "%2d.%02d./%2d:%02d:%02d: %s\r\n", lLocalTime.tm_mday, lLocalTime.tm_mon + 1,
+        sprintf(lTextLine, "%2d/%02d_%2d:%02d:%02d %s\r\n", lLocalTime.tm_mday, lLocalTime.tm_mon + 1,
                 lLocalTime.tm_hour, lLocalTime.tm_min, lLocalTime.tm_sec, theMessage);
 
         // write to file
@@ -223,11 +223,44 @@ ScanPrint::logScan()
                 || (0 == lLastScanNumber)) // or 1st scan
         {
             sprintf(lTextLine,
-                    "%2d.%02d./%2d:%02d:%02d; %12d; %8.3f [s]; %4d [ms]; %4d [ms]; %4d;\r\n", //
+                    "%2d/%02d_%2d:%02d:%02d %8d %8.3f %4d %4d %4d %d\r\n", //
                     lLocalTime.tm_mday, lLocalTime.tm_mon + 1, lLocalTime.tm_hour, lLocalTime.tm_min, lLocalTime.tm_sec,
                     mScanNumber, TIME_TO_SECONDS(mScannerTimeCode), //
                     mScannerTimeCode - lLastScannerTimeCode, mComputerReceiveTimeCode - mComputerSendTimeCode,
-                    lLostScans);
+                    lLostScans,
+					mScan.mNumberOfPoints);
+            for (int32_t lPoints = 0; lPoints < mScan.mNumberOfPoints; lPoints++)
+            {
+            	int32_t lSignalOn = 0;
+                // loop for each point through all echos
+                for (int32_t lEchoes = 0; lEchoes < mScan.mNumberOfEchoes; lEchoes++)
+                {
+                	int32_t lDistance = mScan.mScanData[lPoints][lEchoes].mDistance;
+                	int32_t lPulseWidth = mScan.mScanData[lPoints][lEchoes].mPulseWidth;
+                	if ((uint32_t)lDistance == 0x80000000)
+                	{
+                		if (lSignalOn == 1)
+                		{
+                			printf("%3d:%2d:%12s:%12d\r\n", lPoints, lEchoes, "Low", lPulseWidth);
+                		}
+                	}
+                	else if ((uint32_t)lDistance == 0x7FFFFFFF)
+                	{
+                		if (lSignalOn == 1)
+                		{
+                			printf("%3d:%2d:%12s:%12d\r\n", lPoints, lEchoes, "Noise", lPulseWidth);
+                		}
+                	}
+                	else
+                	{
+                		if (lSignalOn == 0)
+                		{
+                			lSignalOn = 1;
+                		}
+                		printf("%3d:%2d:%12d:%12d\r\n", lPoints, lEchoes, lDistance, lPulseWidth);
+                	}
+                } // end echos
+            } // end points
         }
     } // end valid scan
 
@@ -235,9 +268,9 @@ ScanPrint::logScan()
     else
     {
         sprintf(lTextLine,
-                "%2d.%02d./%2d:%02d:%02d; %12d; %12s;\r\n", //
+                "%2d/%02d_%2d:%02d:%02d %8d %8s\r\n", //
                 lLocalTime.tm_mday, lLocalTime.tm_mon + 1, lLocalTime.tm_hour, lLocalTime.tm_min, lLocalTime.tm_sec,
-                mNumberOfScans, "Empty scan");
+                mNumberOfScans, "Empty");
     }
 
     // log on screen and to file
