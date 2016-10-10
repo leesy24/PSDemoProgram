@@ -25,6 +25,12 @@
 #include "IDataStream.hpp"
 #include "ScanPrint.hpp"
 
+#if __WIN32__
+#include <windows.h>
+#define sleep Sleep
+#else
+#include <unistd.h>
+#endif
 /*
  */
 #if __WIN32__
@@ -195,7 +201,7 @@ ScanPrint::logError(int theError)
  * Log the scan in a file or on the console.
  */
 ErrorID_t
-ScanPrint::logScan()
+ScanPrint::logScan_org()
 {
     // temp. copy of recent scan data
     string128_t lTextLine = { 0 };
@@ -222,16 +228,10 @@ ScanPrint::logScan()
         || (0 == (mScanNumber % lLogInterval)) // or regular interval has expired
                 || (0 == lLastScanNumber)) // or 1st scan
         {
-            sprintf(lTextLine,
-                    "%2d/%02d_%2d:%02d:%02d %8d %8.3f %4d %4d %4d %d\r\n", //
-                    lLocalTime.tm_mday, lLocalTime.tm_mon + 1, lLocalTime.tm_hour, lLocalTime.tm_min, lLocalTime.tm_sec,
-                    mScanNumber, TIME_TO_SECONDS(mScannerTimeCode), //
-                    mScannerTimeCode - lLastScannerTimeCode, mComputerReceiveTimeCode - mComputerSendTimeCode,
-                    lLostScans,
-					mScan.mNumberOfPoints);
             for (int32_t lPoints = 0; lPoints < mScan.mNumberOfPoints; lPoints++)
             {
             	int32_t lSignalOn = 0;
+
                 // loop for each point through all echos
                 for (int32_t lEchoes = 0; lEchoes < mScan.mNumberOfEchoes; lEchoes++)
                 {
@@ -267,10 +267,137 @@ ScanPrint::logScan()
     // empty scan
     else
     {
-        sprintf(lTextLine,
-                "%2d/%02d_%2d:%02d:%02d %8d %8s\r\n", //
-                lLocalTime.tm_mday, lLocalTime.tm_mon + 1, lLocalTime.tm_hour, lLocalTime.tm_min, lLocalTime.tm_sec,
-                mNumberOfScans, "Empty");
+    }
+
+    // log on screen and to file
+    if (0 != lTextLine[0])
+    {
+        printf(lTextLine);
+        if (0 != mTerminalLogFile)
+        {
+            fputs(lTextLine, mTerminalLogFile);
+        }
+    }
+    return ERR_SUCCESS;
+}
+
+/*
+ * Log the scan in a file or on the console.
+ */
+ErrorID_t
+ScanPrint::logScan()
+{
+    // temp. copy of recent scan data
+    string128_t lTextLine = { 0 };
+    int32_t lLastScannerTimeCode = mScannerTimeCode;
+    int32_t lLastScanNumber = mScanNumber;
+    int32_t lLogInterval = DEBUG_LOG_INTERVAL;
+    struct tm lLocalTime = getTime();
+
+    // valid scan?
+    if (0 != mScan.mNumberOfParameter)
+    {
+        mScannerTimeCode = mScan.mParameter[GSCNCommand::PARAMETER_TIME_STAMP];
+        mScanNumber = mScan.mParameter[GSCNCommand::PARAMETER_SCAN_NUMBER];
+        const int32_t lLostScans = mScanNumber - lLastScanNumber - 1;
+
+        // this is the 1st scan.
+        if (0 == lLastScanNumber)
+        {
+            lLastScannerTimeCode = mScannerTimeCode;
+        }
+
+        // print result
+        if ((0 < lLostScans) // if there there are lost scans
+        || (0 == (mScanNumber % lLogInterval)) // or regular interval has expired
+                || (0 == lLastScanNumber)) // or 1st scan
+        {
+        	int32_t lCnt = 0;
+        	int32_t lDistanceSum = 0;
+        	int32_t lSumCnt = 0;
+
+            for (int32_t lPoints = 0; lPoints < mScan.mNumberOfPoints; lPoints++)
+            {
+                // loop for each point through all echos
+                for (int32_t lEchoes = 0; lEchoes < mScan.mNumberOfEchoes; lEchoes++)
+                {
+                	int32_t lDistance = mScan.mScanData[lPoints][lEchoes].mDistance;
+                	//int32_t lPulseWidth = mScan.mScanData[lPoints][lEchoes].mPulseWidth;
+
+            		lCnt ++;
+
+            		if ((uint32_t)lDistance == 0x80000000)
+                	{
+                		if (lSumCnt == 0)
+                		{
+                			lDistanceSum = lDistance;
+                		}
+                	}
+                	else if ((uint32_t)lDistance == 0x7FFFFFFF)
+                	{
+                		if (lSumCnt == 0)
+                		{
+                			lDistanceSum = lDistance;
+                		}
+                	}
+                	else
+                	{
+                		if (lSumCnt == 0)
+                		{
+                			lDistanceSum = 0;
+                		}
+                		lSumCnt ++;
+                		lDistanceSum += lDistance;
+                	}
+
+                	if (lCnt == 10)
+                	{
+                		if (lSumCnt > 0)
+                		{
+                			//printf("%4d:%2d:%8d\r\n", lPoints, lSumCnt, lDistanceSum / lSumCnt);
+                			printf("%4d:%2d:", lPoints, lSumCnt);
+                			for (int32_t lSpaceCnt = 0; lSpaceCnt < ((lDistanceSum / lSumCnt) - 15000) / 500; lSpaceCnt ++)
+                			{
+                				printf("-");
+                			}
+            				printf("|\r\n");
+                		}
+                		else
+                		{
+                			printf("%4d:%2d:%-8s\r\n", lPoints, lSumCnt, (uint32_t)lDistanceSum == 0x80000000 ? "Low" : "Noise");
+
+                		}
+                		lCnt = 0;
+                		lDistanceSum = 0;
+                		lSumCnt = 0;
+                	}
+                } // end echos
+
+                if ((lPoints == (mScan.mNumberOfPoints - 1)) && (lCnt != 0))
+            	{
+            		if (lSumCnt > 0)
+            		{
+            			//printf("%4d:%2d:%8d\r\n", lPoints, lSumCnt, lDistanceSum / lSumCnt);
+            			printf("%4d:%2d:", lPoints, lSumCnt);
+            			for (int32_t lSpaceCnt = 0; lSpaceCnt < ((lDistanceSum / lSumCnt) - 15000) / 500; lSpaceCnt ++)
+            			{
+            				printf("-");
+            			}
+        				printf("|");
+            		}
+            		else
+            		{
+            			printf("%4d:%2d:%-8s\r\n", lPoints, lSumCnt, (uint32_t)lDistanceSum == 0x80000000 ? "Low" : "Noise");
+
+            		}
+            	}
+            } // end points
+        }
+    } // end valid scan
+
+    // empty scan
+    else
+    {
     }
 
     // log on screen and to file
@@ -296,7 +423,7 @@ ScanPrint::processScan()
     {
         // example code: show some profile infos.
         printf(
-                "Scan %d; time %d; Incremental %d; ScanLine %d\r\r", //
+                "Scan %d; time %d; Incremental %d; ScanLine %d \\ / \r\n", //
                 mScan.mParameter[GSCNCommand::PARAMETER_SCAN_NUMBER],
                 mScan.mParameter[GSCNCommand::PARAMETER_TIME_STAMP],
                 mScan.mParameter[GSCNCommand::PARAMETER_INCREMENTAL_ENCODER],
@@ -324,7 +451,7 @@ ScanPrint::run()
     if (ERR_SUCCESS == result)
     {
         // SCAN command: start the scan sequence
-        logMessage("Starting Scan...\r\n");
+        logMessage("Starting Scan... \\ /  \r\n");
         result = mSCANCommand.performCommand();
 
         // prepare table
@@ -352,6 +479,9 @@ ScanPrint::run()
             {
                 logError(result);
             }
+
+            // sleep 1000msec
+            sleep(1000);
         } // end while not terminated
     } // end terminate condition OK.
     return result;

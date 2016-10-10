@@ -166,6 +166,15 @@ class ScanPrint
          *      ERR_SUCCESS on success, otherwise a negative error code.
          */
         virtual ErrorID_t
+        logScan_org();
+
+        /**
+         * Log the scan in a file or on the console.
+         *
+         * @return
+         *      ERR_SUCCESS on success, otherwise a negative error code.
+         */
+        virtual ErrorID_t
         logScan();
 
         /**
