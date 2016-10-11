@@ -27,9 +27,10 @@
 
 #if __WIN32__
 #include <windows.h>
-#define sleep Sleep
+#define sleep_msecs(s) Sleep(s)
 #else
 #include <unistd.h>
+#define sleep_msecs(s) usleep(s*1000)
 #endif
 /*
  */
@@ -481,7 +482,7 @@ ScanPrint::run()
             }
 
             // sleep 1000msec
-            sleep(1000);
+            sleep_msecs(1000);
         } // end while not terminated
     } // end terminate condition OK.
     return result;
