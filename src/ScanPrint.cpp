@@ -26,34 +26,66 @@
 #include "ScanPrint.hpp"
 
 #if __WIN32__
-#include <windows.h>
-#define sleep_msecs(s) Sleep(s)
+	#include <windows.h>
+	#define sleep_msecs(s) Sleep(s)
+#elif __linux__
+	#include <unistd.h>
+	#define sleep_msecs(s) usleep(s*1000)
 #else
-#include <unistd.h>
-#define sleep_msecs(s) usleep(s*1000)
+	#error "This program requires Linux or Win32."
 #endif
 /*
  */
 #if __WIN32__
-/* On windows, we can use kbhit() to check if ESC has been pressed. */
-#include <conio.h>
+	/* On windows, we can use kbhit() to check if ESC has been pressed. */
+	#include <conio.h>
 
+	#define changemode(dir)
+#elif __linux__
+	/* Ref. http://cboard.cprogramming.com/linux-programming/51531-faq-cached-input-mygetch.html?highlight=kbhit */
+	#include <stdio.h>
+	#include <termios.h>
+	#include <unistd.h>
+	#include <sys/types.h>
+	#include <sys/time.h>
+
+	void changemode(int dir)
+	{
+	  static struct termios oldt, newt;
+
+	  if ( dir == 1 )
+	  {
+		tcgetattr( STDIN_FILENO, &oldt);
+		newt = oldt;
+		newt.c_lflag &= ~( ICANON | ECHO );
+		tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+	  }
+	  else
+		tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+	}
+
+	int kbhit (void)
+	{
+	  struct timeval tv;
+	  fd_set rdfs;
+
+	  tv.tv_sec = 0;
+	  tv.tv_usec = 0;
+
+	  FD_ZERO(&rdfs);
+	  FD_SET (STDIN_FILENO, &rdfs);
+
+	  select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
+	  return FD_ISSET(STDIN_FILENO, &rdfs);
+
+	}
+
+	int getch(void)
+	{
+		return getchar();
+	}
 #else
-
-/* TODO On Linux, you have to provide kbhit() by yourself. */
-int
-kbhit()
-{
-    return 0;
-}
-
-/* TODO On Linux, you have to provide getch() by yourself. */
-int
-getch()
-{
-    // it's up to you to enter some clever code here.
-    return 0;
-}
+	#error "This program requires Linux or Win32."
 #endif
 
 /*
@@ -458,6 +490,9 @@ ScanPrint::run()
         // prepare table
         logTableHeader();
 
+        // terminal mode change on linux for kbhit of isTerminated().
+        changemode(1);
+
         // loop until the scans terminate.
         while (false == isTerminated())
         {
@@ -484,6 +519,9 @@ ScanPrint::run()
             // sleep 1000msec
             sleep_msecs(1000);
         } // end while not terminated
+
+        // terminal mode restore on linux for kbhit of isTerminated().
+        changemode(0);
     } // end terminate condition OK.
     return result;
 }
