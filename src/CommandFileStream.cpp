@@ -21,10 +21,12 @@
 #include "CommandFileStream.hpp"
 
 // needed for ntohl
-#ifndef  __WIN32__
-#define __WIN32__ (0)
+#if  __WIN32__
+	#include <winsock2.h>
+#elif __linux__
+	#include <arpa/inet.h>
 #else
-#include <winsock2.h>
+	#error "This program requires Linux or Win32."
 #endif
 
 /* Constructor. */
