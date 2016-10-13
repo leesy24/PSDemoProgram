@@ -21,33 +21,10 @@
 #include <ctime>
 #include <cstdio>
 #include <sys/time.h>
+#include "KbhitGetch.h"
 
 #include "ScanSequence.hpp"
 #include "IDataStream.hpp"
-
-/*
- */
-#if __WIN32__
-/* On windows, we can use kbhit() to check if ESC has been pressed. */
-#include <conio.h>
-
-#else
-
-/* TODO On Linux, you have to provide kbhit() by yourself. */
-int
-kbhit()
-{
-    return 0;
-}
-
-/* TODO On Linux, you have to provide getch() by yourself. */
-int
-getch()
-{
-    // it's up to you to enter some clever code here.
-    return 0;
-}
-#endif
 
 /*
  * Standard constructor.
