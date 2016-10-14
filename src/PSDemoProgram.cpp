@@ -175,8 +175,8 @@ main(int argc, char **argv)
     int32_t lClientPort = 1025;
     int32_t lSelection = 0;
     int32_t lServerPort = 1024;
-    string32_t lClientName = { "" }; // you may enter here your default client IP, e.g. "10.0.3.12"
-    string32_t lServerName = { "10.0.0.0" }; // default sensor IP
+    string32_t lClientName = { "10.0.10.0" }; // you may enter here your default client IP, e.g. "10.0.3.12"
+    string32_t lServerName = { "10.0.8.86" }; // default sensor IP
     string32_t lLogFileName = { 0 };
     string32_t lTerminalLogFileName = { 0 };
     FILE* lLogFile = 0;
