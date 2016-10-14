@@ -364,7 +364,7 @@ ScanPrint::logScan()
             			{
             				printf("-");
             			}
-        				printf("|");
+        				printf("|\r\n");
             		}
             		else
             		{
