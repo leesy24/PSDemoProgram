@@ -56,7 +56,7 @@ mTimeout(0)
     mSocketHandle = socket(AF_INET, SOCK_DGRAM, 0);
     if (0 >= mSocketHandle)
     {
-    	perror("socket failed\n");
+    	perror("socket failed");
         fprintf(stderr, "cannot create sockets.\r\n");
     }
 }
@@ -93,7 +93,7 @@ ClientSocket::setClientIPAddress(const char* theClientAddress, int32_t thePort)
     struct hostent* hostInfo = gethostbyname(theClientAddress);
     if (NULL == hostInfo)
     {
-    	perror("gethostbyname failed\n");
+    	perror("gethostbyname failed");
         fprintf(stderr, "Socket error: Unknown host.\r\n");
         return ERR_INVALID_HANDLE;
     }
@@ -117,7 +117,7 @@ ClientSocket::setServerIPAddress(const char* theServerAddress, int32_t thePort)
     struct hostent* hostInfo = gethostbyname(theServerAddress);
     if (NULL == hostInfo)
     {
-    	perror("gethostbyname failed\n");
+    	perror("gethostbyname failed");
         fprintf(stderr, "Socket error: unknown remote host.\r\n");
         return ERR_INVALID_HANDLE;
     }
@@ -176,7 +176,7 @@ ClientSocket::open()
     status = bind(mSocketHandle, (struct sockaddr*) &mClientIPAddress, sizeof(mClientIPAddress));
     if (0 > status)
     {
-    	perror("bind failed\n");
+    	perror("bind failed");
         fprintf(stderr, "Socket error: Cannot bind connection/port\r\n");
         return ERR_INVALID_HANDLE;
     }
@@ -185,7 +185,7 @@ ClientSocket::open()
     status = connect(mSocketHandle, (struct sockaddr*) &mServerIPAddress, sizeof(mServerIPAddress));
     if (0 > status)
     {
-    	perror("connect failed\n");
+    	perror("connect failed");
         fprintf(stderr, "Socket error: Connection refused.\r\n");
         return ERR_INVALID_HANDLE;
     }
@@ -194,7 +194,7 @@ ClientSocket::open()
     status = setsockopt(mSocketHandle, SOL_SOCKET, SO_RCVTIMEO, lTimeout.asChar, sizeof(lTimeout));
     if (0 > status)
     {
-    	perror("setsockopt failed\n");
+    	perror("setsockopt failed");
         fprintf(stderr, "Socket error: Cannot initialize connection timeout! (%d)\r\n", status);
         return ERR_INVALID_HANDLE;
     }
