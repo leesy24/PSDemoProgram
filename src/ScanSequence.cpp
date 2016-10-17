@@ -89,6 +89,8 @@ ScanSequence::getTime()
 bool
 ScanSequence::isTerminated()
 {
+	int key;
+
     // not started or expired
     bool lExpired = ((0 != mScanPeriod) && ((mStartTime + mScanPeriod) < getMilliseconds()));
     if ((0 == mStartTime) || lExpired)
@@ -97,8 +99,8 @@ ScanSequence::isTerminated()
         return true;
     }
 
-    // check for ESC
-    return ((0 != kbhit()) && (VK_ESC == getch()));
+    // check for ESC or 'q' or 'Q'
+    return ((0 != kbhit()) && (((key = getch()) == VK_ESC) || (key == 'q') || (key == 'Q')));
 }
 
 /*
