@@ -293,8 +293,8 @@ main(int argc, char **argv)
 
     // close the socket
     lClientSocket.close();
-    fclose(lLogFile);
-    fclose(lTerminalLogFile);
+    if (lLogFile) fclose(lLogFile);
+    if (lTerminalLogFile) fclose(lTerminalLogFile);
     printf("Bye-bye.\r\n");
     return 0;
 }
