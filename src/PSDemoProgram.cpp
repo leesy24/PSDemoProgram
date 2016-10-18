@@ -243,6 +243,8 @@ main(int argc, char **argv)
     // open the socket
     if (ERR_SUCCESS != lClientSocket.open())
     {
+        if (lLogFile) fclose(lLogFile);
+        if (lTerminalLogFile) fclose(lTerminalLogFile);
         fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
         return ERR_IO;
     }
