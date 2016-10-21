@@ -11,6 +11,7 @@
 
 ClientUART::ClientUART() :
         mIsOpen(false), //
+		mPort("\0"), //
 		hComm(0), //
         mLogFile(0), //
         mTimeout(0)
@@ -19,11 +20,14 @@ ClientUART::ClientUART() :
 
 ClientUART::~ClientUART()
 {
-	close();
+	if (mIsOpen)
+		close();
 }
 
-ErrorID_t ClientUART::config(int32_t theTimeout, FILE* theLogFile)
+ErrorID_t ClientUART::config(const char* thePort, int32_t theTimeout, FILE* theLogFile)
 {
+	strcpy(mPort, thePort);
+
 	// set in ms
     mTimeout = theTimeout * 1000;
 
@@ -32,20 +36,20 @@ ErrorID_t ClientUART::config(int32_t theTimeout, FILE* theLogFile)
     return ERR_SUCCESS;
 }
 
-ErrorID_t ClientUART::open(const char* thePort)
+ErrorID_t ClientUART::open()
 {
 	BOOL  Status;                          // Status of the various operations
 
-	printf("Opening UART port %s~\r\n", thePort);
+	printf("Opening UART port %s~\r\n", mPort);
 
-	if (thePort == NULL)
+	if (mPort == NULL)
 	{
         fprintf(stderr, "UART error: port not defined.\r\n");
         return ERR_INVALID_HANDLE;
 	}
 
 	/*---------------------------------- Opening the Serial Port -------------------------------------------*/
-	hComm = CreateFile( thePort,        		      // Name of the Port to be Opened
+	hComm = CreateFile( mPort,        		      // Name of the Port to be Opened
                         GENERIC_READ | GENERIC_WRITE, // Read/Write Access
 						0,                            // No Sharing, ports cant be shared
 						NULL,                         // No Security
@@ -55,10 +59,10 @@ ErrorID_t ClientUART::open(const char* thePort)
 
 	if (hComm == INVALID_HANDLE_VALUE)
 	{
-		fprintf(stderr, "    Error! - Port %s can't be opened\r\n", thePort);
+		fprintf(stderr, "    Error! - Port %s can't be opened\r\n", mPort);
         return ERR_INVALID_HANDLE;
 	}
-	printf("    Port %s Opened\r\n", thePort);
+	printf("    Port %s Opened\r\n", mPort);
 
 	/*------------------------------- Setting the Parameters for the SerialPort ------------------------------*/
 	DCB dcbSerialParams = { 0 };                         // Initializing DCB structure
@@ -122,6 +126,7 @@ ErrorID_t ClientUART::close()
 	printf("Closing UART~\r\n");
     if (!mIsOpen)
     {
+    	printf("Close is not opened!\r\n");
         return ERR_SUCCESS;
     }
 

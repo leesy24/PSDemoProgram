@@ -11,13 +11,16 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "ErrorID.h"
+#include "IDataStream.hpp"
 
-class ClientUART
+class ClientUART : public IDataStream
 {
 	private:
 		/** a flag indicating an opened socket. */
 		bool mIsOpen;
+
+        /** the sensors IP address */
+		string32_t mPort;
 
 		HANDLE hComm;                          // Handle to the Serial port
 
@@ -27,14 +30,27 @@ class ClientUART
 		/** timeout in ms. */
 		int mTimeout;
 
+        /** private assignment constructor to avoid misuse */
+        explicit
+		ClientUART(const ClientUART& src);
+
+        /** private assignment operator to avoid misuse */
+        ClientUART&
+        operator =(const ClientUART& src);
+
 	public:
 		ClientUART();
 
-		~ClientUART();
+		virtual ~ClientUART();
 
-		ErrorID_t config(int32_t theTimeout, FILE* theLogFile);
+		ErrorID_t config(const char* thePort, int32_t theTimeout, FILE* theLogFile);
 
-		ErrorID_t open(const char* thePort);
+		virtual ErrorID_t open();
+
+		inline bool isOpen()
+        {
+            return mIsOpen;
+        }
 
 		ErrorID_t close();
 
