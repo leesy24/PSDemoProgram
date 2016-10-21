@@ -2,7 +2,7 @@
 <launchConfiguration type="org.eclipse.cdt.launch.applicationLaunchType">
 <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="run"/>
-<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_ARGUMENTS" value="10.0.8.86"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_ARGUMENTS" value="UART COM4"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="C:\work\git\PSDemoProgram\Release-windows\PSDemoProgram.exe"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="PSDemoProgram"/>
 <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="false"/>
