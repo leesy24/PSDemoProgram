@@ -19,7 +19,7 @@ class ClientUART : public IDataStream
 		/** a flag indicating an opened socket. */
 		bool mIsOpen;
 
-        /** the sensors IP address */
+        /** the sensors UART port */
 		string32_t mPort;
 
 		HANDLE hComm;                          // Handle to the Serial port
