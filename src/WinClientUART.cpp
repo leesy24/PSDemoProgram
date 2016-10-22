@@ -96,19 +96,23 @@ ErrorID_t ClientUART::open()
 
 	/*------------------------------------ Setting Timeouts --------------------------------------------------*/
 	COMMTIMEOUTS timeouts = { 0 };
-#if 1 // Ref. https://groups.google.com/forum/#!topic/comp.os.ms-windows.programmer.win32/SotVc2_Eiig
-	timeouts.ReadIntervalTimeout         = MAXDWORD;
-	timeouts.ReadTotalTimeoutConstant    = 0;
-	timeouts.ReadTotalTimeoutMultiplier  = 0;
-	timeouts.WriteTotalTimeoutConstant   = 0;
-	timeouts.WriteTotalTimeoutMultiplier = 0;
-#else
-	timeouts.ReadIntervalTimeout         = 50;
-	timeouts.ReadTotalTimeoutConstant    = 50;
-	timeouts.ReadTotalTimeoutMultiplier  = 10;
-	timeouts.WriteTotalTimeoutConstant   = 50;
-	timeouts.WriteTotalTimeoutMultiplier = 10;
-#endif
+	if (mTimeout == 0)
+	{
+		// Ref. https://groups.google.com/forum/#!topic/comp.os.ms-windows.programmer.win32/SotVc2_Eiig
+		timeouts.ReadIntervalTimeout         = MAXDWORD;
+		timeouts.ReadTotalTimeoutConstant    = 0;
+		timeouts.ReadTotalTimeoutMultiplier  = 0;
+		timeouts.WriteTotalTimeoutConstant   = 0;
+		timeouts.WriteTotalTimeoutMultiplier = 0;
+	}
+	else
+	{
+		timeouts.ReadIntervalTimeout         = MAXDWORD;
+		timeouts.ReadTotalTimeoutConstant    = mTimeout;
+		timeouts.ReadTotalTimeoutMultiplier  = 0;
+		timeouts.WriteTotalTimeoutConstant   = 0;
+		timeouts.WriteTotalTimeoutMultiplier = 0;
+	}
 
 	if (SetCommTimeouts(hComm, &timeouts) == FALSE)
 	{
