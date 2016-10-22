@@ -197,14 +197,14 @@ main(int argc, char **argv)
     printf("%s\r\n", getVersionString());
 
     // parse command line: help
-    if (argc < 3 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART")))
+    if (argc < 2 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART")))
     {
         puts("Usage: PSDemoProgram \r\n"
                 "   NET\r\n"
                 "   [sensor_ip_address] [sensor_port]\r\n"
                 "   [client_ip_address] [client_port]\r\n"
                 "   [terminal log file] [data log file]\r\n"
-                "   or\r\n"
+                "   -or-\r\n"
 				"   UART\r\n"
 				"   [UART_port]\r\n"
 				"   [terminal log file] [data log file]\r\n");
@@ -290,10 +290,10 @@ main(int argc, char **argv)
 
 		printf("Sensor UART: %s\r\n\n", lUARTName);
 
-		// create the socket
+		// configure the UART
 		lClientUART.config(lUARTName, 10, lLogFile);
 
-		// open the socket
+		// open the UART
 		if (ERR_SUCCESS != lClientUART.open())
 		{
 			if (lLogFile) fclose(lLogFile);
