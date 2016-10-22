@@ -1,5 +1,5 @@
 /*
- * ClientCommunication.hpp
+ * WinClientUART.hpp
  *
  *  Created on: 2016. 10. 21.
  *      Author: leesy
