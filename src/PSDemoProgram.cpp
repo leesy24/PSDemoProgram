@@ -30,6 +30,7 @@
 
 #if __linux__
 #include "LinuxClientSocket.hpp"
+#include "LinuxClientUART.hpp"
 #elif __WIN32__
 #include "WinClientSocket.hpp"
 #include "WinClientUART.hpp"
@@ -182,7 +183,11 @@ main(int argc, char **argv)
     string32_t lServerName = { "10.0.8.86" }; // default sensor IP
     string32_t lLogFileName = { 0 };
     string32_t lTerminalLogFileName = { 0 };
+#if __WIN32__
     string32_t lUARTName = { "COM4" }; // you may enter here your default client UART port.
+#else // if __linux__
+    string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default client UART port.
+#endif
     FILE* lLogFile = 0;
     FILE* lTerminalLogFile = 0;
 
@@ -312,7 +317,8 @@ main(int argc, char **argv)
                 " 2 - GPRM: Getting a sensor parameter\r\n"
                 " 3 - SPRM: Setting a sensor parameter\r\n"
                 " 4 - SCAN: Starting a scan sequence\r\n"
-                " 5 - SCPR: Getting a scan data and print graph\r\n\n"
+                " 5 - SCPR: Getting a scan data and print graph\r\n"
+                " 6 - RELAY: Relaying data to/from NET and UART\r\n\n"
                 " 0 - Exit\r\n> ");
         fscanf(stdin, "%d", &lSelection);
 
