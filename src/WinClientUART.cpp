@@ -9,6 +9,9 @@
 
 #include "WinClientUART.hpp"
 
+//#define DEBUG_WRITE
+//#define DEBUG_READ
+
 ClientUART::ClientUART() :
         mIsOpen(false), //
 		mPort("\0"), //
@@ -98,10 +101,16 @@ ErrorID_t ClientUART::open()
 	COMMTIMEOUTS timeouts = { 0 };
 	if (mTimeout == 0)
 	{
+#if 1
 		// Ref. https://groups.google.com/forum/#!topic/comp.os.ms-windows.programmer.win32/SotVc2_Eiig
 		timeouts.ReadIntervalTimeout         = MAXDWORD;
 		timeouts.ReadTotalTimeoutConstant    = 0;
 		timeouts.ReadTotalTimeoutMultiplier  = 0;
+#else
+		timeouts.ReadIntervalTimeout         = 50;
+		timeouts.ReadTotalTimeoutConstant    = 50;
+		timeouts.ReadTotalTimeoutMultiplier  = 10;
+#endif
 		timeouts.WriteTotalTimeoutConstant   = 0;
 		timeouts.WriteTotalTimeoutMultiplier = 0;
 	}
@@ -147,6 +156,8 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 {
 	BOOL  Status;			// Status of the various operations
 	DWORD NoBytesRead = 0;	// Bytes read by ReadFile()
+	DWORD dSize = (DWORD)size;
+	int32_t total = 0;
 
 	//printf("Reading UART data!\r\n");
 	if (!mIsOpen)
@@ -155,15 +166,31 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 		return 0;
 	}
 
-	Status = ReadFile(hComm, buffer, size, &NoBytesRead, NULL);
-	if (Status == FALSE || NoBytesRead == 0)
+	do
 	{
-		//printf("Read zero byte UART data!\r\n");
-		return 0;
-	}
+		Status = ReadFile(hComm, (unsigned char *)buffer +  total, dSize - total, &NoBytesRead, NULL);
+		if (Status == FALSE || NoBytesRead == 0)
+		{
+			if (total == 0)
+			{
+				//printf("Read zero byte UART data!\r\n");
+				return 0;
+			}
+			break;
+		}
+		total += (int32_t)NoBytesRead;
+	} while(1);
 
-	//printf("Read %ld byte UART data!\r\n", NoBytesRead);
-	return (int32_t)NoBytesRead;
+#if DEBUG_READ
+	printf("Read %d byte UART data!\r\n", total);
+	for(int i = 0; i < total; i ++)
+	{
+		printf("0x%x ", *((unsigned char *)buffer+i));
+	}
+	printf("\r\n");
+#endif
+
+	return total;
 }
 
 int32_t ClientUART::write(void* buffer, int32_t size)
@@ -177,6 +204,15 @@ int32_t ClientUART::write(void* buffer, int32_t size)
 	{
 		return -1;
 	}
+
+#if DEBUG_WRITE
+	printf("Writing UART data %d bytes!\r\n", size);
+	for(int i = 0; i < size; i ++)
+	{
+		printf("0x%x ", *((unsigned char *)buffer+i));
+	}
+	printf("\r\n");
+#endif
 
 	Status = WriteFile(	hComm,				// Handle to the Serialport
 						buffer,				// Data to be written to the port
