@@ -18,6 +18,9 @@ namespace fcntl {
 #include <string.h>
 #include "LinuxClientUART.hpp"
 
+//#define DEBUG_WRITE
+//#define DEBUG_READ
+
 ClientUART::ClientUART() :
         mIsOpen(false), //
 		tty_fd(0), //
@@ -109,11 +112,22 @@ ErrorID_t ClientUART::close()
 int32_t ClientUART::read(void* buffer, int32_t size)
 {
 	int32_t n;
+#if DEBUG_READ
 	printf("Reading UART data!\r\n");
+#endif
 
 	n = unistd::read(tty_fd, buffer, size);
 
-	printf("Read %d byte UART data!\r\n", n);
+#if DEBUG_READ
+	if (n)
+	{
+		printf("Read %d byte UART data!\r\n", n);
+	}
+	else
+	{
+		printf("Read zero byte UART data!\r\n");
+	}
+#endif
 	return n;
 }
 
@@ -121,8 +135,14 @@ int32_t ClientUART::write(void* buffer, int32_t size)
 {
 	int32_t n;
 
-	//printf("Writing UART data %d bytes!\r\n", size);
-
+#if DEBUG_WRITE
+	printf("Writing UART data %d bytes!\r\n", size);
+	for(int i = 0; i < size; i ++)
+	{
+		printf("0x%x ", *((unsigned char *)buffer+i));
+	}
+	printf("\r\n");
+#endif
 	n = unistd::write(tty_fd, buffer, size);
 
 	//printf("Written UART data!\r\n");

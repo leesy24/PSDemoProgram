@@ -41,6 +41,9 @@ extern "C"
 #include <cstring>
 #include <cstdio>
 
+//#define DEBUG_WRITE
+//#define DEBUG_READ
+
 /*
  * Creates a socket and bind it to a server's address.
  */
@@ -220,6 +223,14 @@ ClientSocket::read(void* buffer, int32_t size)
         // OK?
         if (0 < result)
         {
+#if DEBUG_READ
+        	printf("Read %d byte NET data!\r\n", result);
+			for(int i = 0; i < result; i ++)
+			{
+				printf("0x%x ", *((unsigned char *)buffer+i));
+			}
+			printf("\r\n");
+#endif
             // write received byte into a log file
             if (0 != mLogFile)
             {
@@ -232,7 +243,7 @@ ClientSocket::read(void* buffer, int32_t size)
         {
             // get socket error ID.
             result = -errno;
-            fprintf(stderr, "Socket error: cannot read (%d)\r\n", result);
+            //fprintf(stderr, "Socket error: cannot read (%d)\r\n", result);
         }
     }
     return result;
@@ -250,6 +261,14 @@ ClientSocket::write(void* buffer, int32_t size)
 
     if (isOpen() && (0 != buffer) && (0 < size))
     {
+#if DEBUG_WRITE
+    	printf("Writing NET data %d bytes!\r\n", size);
+		for(int i = 0; i < size; i ++)
+		{
+			printf("0x%x ", *((unsigned char *)buffer+i));
+		}
+		printf("\r\n");
+#endif
         result = send(mSocketHandle, static_cast<char*>(buffer), size, 0);
     }
     return result;

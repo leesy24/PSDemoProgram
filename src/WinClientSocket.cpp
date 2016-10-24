@@ -27,6 +27,9 @@
 #include <cstring>
 #include <cstdio>
 
+//#define DEBUG_WRITE
+//#define DEBUG_READ
+
 /*
  * Creates a socket and bind it to a server's address.
  */
@@ -247,6 +250,14 @@ ClientSocket::write(void* buffer, int32_t size)
 
     if (isOpen() && (0 != buffer) && (0 < size))
     {
+#if DEBUG_WRITE
+    	printf("Writing NET data %d bytes!\r\n", size);
+		for(int i = 0; i < size; i ++)
+		{
+			printf("0x%x ", *((unsigned char *)buffer+i));
+		}
+		printf("\r\n");
+#endif
         result = send(mSocketHandle, static_cast<char*>(buffer), size, 0);
     }
     return result;
