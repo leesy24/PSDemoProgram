@@ -47,6 +47,7 @@
 #include "ScanSequence.hpp"
 #include "ScanPrint.hpp"
 #include "SPRMCommand.hpp"
+#include "KbhitGetch.h"
 
 /**
  * Shows how to read the firmware version.
@@ -166,6 +167,35 @@ testSCPR(IDataStream& theDataStream, FILE* theTerminalLogFile)
     lScanPrint.run();
 }
 
+/**
+ */
+void
+testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile)
+{
+	int32_t read_len;
+	unsigned char read_data[64 * 1024];
+
+    // terminal mode change on linux for kbhit of isTerminated().
+    changemode(1);
+
+    do
+	{
+		// if new data is available on the serial port, print it out
+		if ((read_len = theUART.read(read_data, sizeof(read_data))) > 0)
+		{
+			theSocket.write(read_data, read_len);
+		}
+		// if new data is available on the console, send it to the serial port
+		if ((read_len = theSocket.read(read_data, sizeof(read_data))) > 0)
+		{
+			theUART.write(read_data, read_len);
+		}
+	} while((kbhit() == 0) || (getch() != 'q'));
+
+    // terminal mode restore on linux for kbhit of isTerminated().
+    changemode(0);
+}
+
 /*
  * Main for a number of tests.
  */
@@ -202,160 +232,251 @@ main(int argc, char **argv)
     printf("%s\r\n", getVersionString());
 
     // parse command line: help
-    if (argc < 2 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART")))
+    if (argc < 2 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART") && strcmp(argv[1], "RELAY")))
     {
-        puts("Usage: PSDemoProgram \r\n"
-                "   NET\r\n"
-                "   [sensor_ip_address] [sensor_port]\r\n"
-                "   [client_ip_address] [client_port]\r\n"
-                "   [terminal log file] [data log file]\r\n"
-                "   -or-\r\n"
+		puts(	"Usage: PSDemoProgram \r\n"
+				"   NET\r\n"
+				"   [sensor_ip_address] [sensor_port]\r\n"
+				"   [client_ip_address] [client_port]\r\n"
+				"   [terminal log file] [data log file]\r\n"
+				"   -or-\r\n"
 				"   UART\r\n"
 				"   [UART_port]\r\n"
-				"   [terminal log file] [data log file]\r\n");
-        puts(
-                "Example:\r\n"
-                        "  PSTestProgram NET 10.0.3.12 1024 10.0.10.0 1025 terminal.txt scans.dat\r\n"
-        				"  PSTestProgram UART COM4 terminal.txt scans.dat\r\n");
-        return -1;
-    }
+				"   [terminal log file] [data log file]\r\n"
+				"   -or-\r\n"
+				"   RELAY\r\n"
+				"   [UART_port]\r\n"
+				"   [sensor_ip_address] [sensor_port]\r\n"
+				"   [terminal log file] [data log file]\r\n\n");
+		printf(	"Example:\r\n");
+		printf(	"   PSTestProgram NET 10.0.3.12 1024 10.0.10.0 1025 term.txt scans.dat\r\n"
+				"   -or- PSTestProgram NET 10.0.3.12\r\n");
+		printf(	"   PSTestProgram UART %s terminal.txt scans.dat\r\n", lUARTName);
+		printf(	"   -or- PSTestProgram UART %s\r\n", lUARTName);
+		printf(	"   PSTestProgram RELAY %s 10.0.3.12 1024 10.0.10.0 1025 term.txt scans.dat\r\n", lUARTName);
+		printf(	"   -or- PSTestProgram RELAY %s 10.0.3.12 terminal.txt scans.dat\r\n", lUARTName);
+		return -1;
+	}
 
-    if (!strcmp(argv[1], "NET"))
+    if (!strcmp(argv[1], "NET") || !strcmp(argv[1], "UART"))
     {
-		// get sensor IP and port from the command line
-		if (3 <= argc)
+		if (!strcmp(argv[1], "NET"))
 		{
-			strcpy(lServerName, argv[2]);
+			// get sensor IP and port from the command line
+			if (3 <= argc)
+			{
+				strcpy(lServerName, argv[2]);
+			}
+			if (4 <= argc)
+			{
+				lServerPort = atoi(argv[3]);
+			}
+
+			// get sensor and local IP from the command line
+			if (5 <= argc)
+			{
+				strcpy(lClientName, argv[4]);
+			}
+			if (6 <= argc)
+			{
+				lClientPort = atoi(argv[5]);
+			}
+
+			// open the log files
+			if (7 <= argc)
+			{
+				strcpy(lTerminalLogFileName, argv[6]);
+				lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
+			}
+			if (8 <= argc)
+			{
+				strcpy(lLogFileName, argv[7]);
+				lLogFile = fopen(lLogFileName, "wb");
+			}
+
+			printf("Sensor IP: %s:%d\r\nLocal IP: %s:%d\r\n\n", lServerName,
+					lServerPort, lClientName, lClientPort);
+
+			// create the socket
+			lClientSocket.setClientIPAddress(lClientName, lClientPort);
+			lClientSocket.setServerIPAddress(lServerName, lServerPort);
+			lClientSocket.setLogFile(lLogFile);
+			lClientSocket.setTimeout(10);
+
+			// open the socket
+			if (ERR_SUCCESS != lClientSocket.open())
+			{
+				if (lLogFile) fclose(lLogFile);
+				if (lTerminalLogFile) fclose(lTerminalLogFile);
+				fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
+				return ERR_IO;
+			}
+			lpDataSteam = &lClientSocket;
 		}
-		if (4 <= argc)
+		else // if (!strcmp(argv[1], "UART"))
 		{
-			lServerPort = atoi(argv[3]);
+			// get UART port from the command line
+			if (argc >= 3)
+			{
+				strcpy(lUARTName, argv[2]);
+			}
+
+			// open the log files
+			if (argc >= 4)
+			{
+				strcpy(lTerminalLogFileName, argv[3]);
+				lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
+			}
+			if (argc >= 5)
+			{
+				strcpy(lLogFileName, argv[4]);
+				lLogFile = fopen(lLogFileName, "wb");
+			}
+
+			printf("UART port: %s\r\n\n", lUARTName);
+
+			// configure the UART
+			lClientUART.config(lUARTName, 1, lLogFile);
+
+			// open the UART
+			if (ERR_SUCCESS != lClientUART.open())
+			{
+				if (lLogFile) fclose(lLogFile);
+				if (lTerminalLogFile) fclose(lTerminalLogFile);
+				fprintf(stderr, "Error: Cannot open UART connection!\r\n");
+				return ERR_IO;
+			}
+			lpDataSteam = &lClientUART;
 		}
 
-		// get sensor and local IP from the command line
-		if (5 <= argc)
-		{
-			strcpy(lClientName, argv[4]);
-		}
-		if (6 <= argc)
-		{
-			lClientPort = atoi(argv[5]);
-		}
+		// menu
+	    while (false == done)
+	    {
+	        printf("\r\nPS Demo Program:\r\n"
+	                " 1 - GVER: get firmware version\r\n"
+	                " 2 - GPRM: Getting a sensor parameter\r\n"
+	                " 3 - SPRM: Setting a sensor parameter\r\n"
+	                " 4 - SCAN: Starting a scan sequence\r\n"
+	                " 5 - SCPR: Getting a scan data and print graph\r\n"
+	                " 0 - Exit\r\n> ");
+	        fscanf(stdin, "%d", &lSelection);
 
-		// open the log files
-		if (7 <= argc)
-		{
-			strcpy(lTerminalLogFileName, argv[6]);
-			lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
-		}
-		if (8 <= argc)
-		{
-			strcpy(lLogFileName, argv[7]);
-			lLogFile = fopen(lLogFileName, "wb");
-		}
+	        switch (lSelection)
+	        {
+	            case 1:
+	                testGVER(*lpDataSteam);
+	                break;
 
-		printf("Sensor IP: %s:%d\r\nLocal IP: %s:%d\r\n\n", lServerName,
-				lServerPort, lClientName, lClientPort);
+	            case 2:
+	                testGPRM(*lpDataSteam);
+	                break;
 
-		// create the socket
-		lClientSocket.setClientIPAddress(lClientName, lClientPort);
-		lClientSocket.setServerIPAddress(lServerName, lServerPort);
-		lClientSocket.setLogFile(lLogFile);
-		lClientSocket.setTimeout(10);
+	            case 3:
+	                testSPRM(*lpDataSteam);
+	                break;
 
-		// open the socket
-		if (ERR_SUCCESS != lClientSocket.open())
-		{
-			if (lLogFile) fclose(lLogFile);
-			if (lTerminalLogFile) fclose(lTerminalLogFile);
-			fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
-			return ERR_IO;
-		}
-		lpDataSteam = &lClientSocket;
+	            case 4:
+	                testSCAN(*lpDataSteam, lTerminalLogFile);
+	                break;
+
+	            case 5:
+	                testSCPR(*lpDataSteam, lTerminalLogFile);
+	                break;
+
+	            case 0:
+	                done = true;
+	                break;
+
+	            default:
+	                // ignore
+	                break;
+	        }
+	    }
     }
-    else //if (!strcmp(argv[1], "UART"))
+    else //if (!strcmp(argv[1], "RELAY"))
     {
-		// get sensor IP and port from the command line
+		// get UART port from the command line
 		if (argc >= 3)
 		{
 			strcpy(lUARTName, argv[2]);
 		}
 
-		// open the log files
-		if (argc >= 4)
+		printf("UART port: %s\r\n\n", lUARTName);
+
+		// get sensor IP and port from the command line
+		if (4 <= argc)
 		{
-			strcpy(lTerminalLogFileName, argv[3]);
+			strcpy(lServerName, argv[3]);
+		}
+		if (5 <= argc)
+		{
+			lServerPort = atoi(argv[4]);
+		}
+
+		// get sensor and local IP from the command line
+		if (6 <= argc)
+		{
+			strcpy(lClientName, argv[5]);
+		}
+		if (7 <= argc)
+		{
+			lClientPort = atoi(argv[6]);
+		}
+
+		// open the log files
+		if (8 <= argc)
+		{
+			strcpy(lTerminalLogFileName, argv[7]);
 			lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
 		}
-		if (argc >= 5)
+		if (9 <= argc)
 		{
-			strcpy(lLogFileName, argv[4]);
+			strcpy(lLogFileName, argv[8]);
 			lLogFile = fopen(lLogFileName, "wb");
 		}
 
-		printf("Sensor UART: %s\r\n\n", lUARTName);
+		printf("Sensor IP: %s:%d and Local IP: %s:%d\r\n\n", lServerName, lServerPort, lClientName, lClientPort);
 
 		// configure the UART
-		lClientUART.config(lUARTName, 10, lLogFile);
+		lClientUART.config(lUARTName, 0, lLogFile);
 
 		// open the UART
 		if (ERR_SUCCESS != lClientUART.open())
 		{
 			if (lLogFile) fclose(lLogFile);
 			if (lTerminalLogFile) fclose(lTerminalLogFile);
-			fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
+			fprintf(stderr, "Error: Cannot open UART connection!\r\n");
 			return ERR_IO;
 		}
-		lpDataSteam = &lClientUART;
-    }
 
-    // menu
-    while (false == done)
-    {
-        printf("\r\nPS Demo Program:\r\n"
-                " 1 - GVER: get firmware version\r\n"
-                " 2 - GPRM: Getting a sensor parameter\r\n"
-                " 3 - SPRM: Setting a sensor parameter\r\n"
-                " 4 - SCAN: Starting a scan sequence\r\n"
-                " 5 - SCPR: Getting a scan data and print graph\r\n"
-                " 6 - RELAY: Relaying data to/from NET and UART\r\n\n"
-                " 0 - Exit\r\n> ");
-        fscanf(stdin, "%d", &lSelection);
+		// create the socket
+		lClientSocket.setClientIPAddress(lClientName, lClientPort);
+		lClientSocket.setServerIPAddress(lServerName, lServerPort);
+		lClientSocket.setLogFile(lLogFile);
+		lClientSocket.setTimeout(0);
 
-        switch (lSelection)
-        {
-            case 1:
-                testGVER(*lpDataSteam);
-                break;
+		// open the socket
+		if (ERR_SUCCESS != lClientSocket.open())
+		{
+			if (lLogFile) fclose(lLogFile);
+			if (lTerminalLogFile) fclose(lTerminalLogFile);
+			fprintf(stderr, "Error: Cannot open sensor IP connection!\r\n");
+			return ERR_IO;
+		}
 
-            case 2:
-                testGPRM(*lpDataSteam);
-                break;
-
-            case 3:
-                testSPRM(*lpDataSteam);
-                break;
-
-            case 4:
-                testSCAN(*lpDataSteam, lTerminalLogFile);
-                break;
-
-            case 5:
-                testSCPR(*lpDataSteam, lTerminalLogFile);
-                break;
-
-            case 0:
-                done = true;
-                break;
-
-            default:
-                // ignore
-                break;
-        }
+        testRELAY(lClientUART, lClientSocket, lTerminalLogFile);
     }
 
     // close the socket
-    lpDataSteam->close();
+    if(lClientSocket.isOpen())
+    {
+    	lClientSocket.close();
+    }
+    // close the UART
+    if(lClientUART.isOpen())
+    {
+    	lClientUART.close();
+    }
     if (lLogFile) fclose(lLogFile);
     if (lTerminalLogFile) fclose(lTerminalLogFile);
     printf("Bye-bye.\r\n");
