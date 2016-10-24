@@ -204,12 +204,14 @@
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release-windows"/>
 		<configuration configurationName="Release-bbb">
 			<resource resourceType="PROJECT" workspacePath="/PSDemoProgram"/>
 		</configuration>
 		<configuration configurationName="Multiple configurations">
 			<resource resourceType="PROJECT" workspacePath="/PSDemoProgram"/>
 		</configuration>
+		<configuration configurationName="Debug-windows"/>
 		<configuration configurationName="Debug-bbb">
 			<resource resourceType="PROJECT" workspacePath="/PSDemoProgram"/>
 		</configuration>
