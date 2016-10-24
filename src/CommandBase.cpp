@@ -81,6 +81,7 @@ CommandBase::checkCRC()
     const uint32_t lCRCExpected = htonl(*lCRCReceivedPtr.asIntegerPtr);
     const uint32_t lCRCReceived = lCRC.get(&mBuffer, mBytesReceived - 4);
 
+    //printf("CRC expected:0x%x, received:0x%x\n", lCRCExpected, lCRCReceived);
     if (lCRCExpected != lCRCReceived)
     {
         return ERR_CRC;
