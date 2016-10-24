@@ -32,6 +32,7 @@ int kbhit (void)
 {
   struct timeval tv;
   fd_set rdfs;
+  int ret;
 
   tv.tv_sec = 0;
   tv.tv_usec = 0;
@@ -40,8 +41,11 @@ int kbhit (void)
   FD_SET (STDIN_FILENO, &rdfs);
 
   select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
-  return FD_ISSET(STDIN_FILENO, &rdfs);
+  ret = FD_ISSET(STDIN_FILENO, &rdfs);
 
+  //fprintf(stderr, "FD_ISSET return %d\r\n", ret);
+
+  return ret;
 }
 
 int getch(void)
