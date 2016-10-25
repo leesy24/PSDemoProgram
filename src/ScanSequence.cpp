@@ -276,7 +276,10 @@ ScanSequence::run()
         // prepare table
         logTableHeader();
 
-        // loop until the scans terminate.
+        // terminal mode change on linux for kbhit of isTerminated().
+        changemode(1);
+
+       // loop until the scans terminate.
         while (false == isTerminated())
         {
             // request a scan, measure how long this takes on this machine.
@@ -299,6 +302,9 @@ ScanSequence::run()
                 logError(result);
             }
         } // end while not terminated
+
+        // terminal mode restore on linux for kbhit of isTerminated().
+        changemode(0);
     } // end terminate condition OK.
     return result;
 }
