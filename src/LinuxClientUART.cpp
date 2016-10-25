@@ -21,7 +21,7 @@ namespace fcntl {
 #include "LinuxClientUART.hpp"
 
 //#define DEBUG_WRITE 1
-#define DEBUG_READ 1
+//#define DEBUG_READ 1
 
 ClientUART::ClientUART() :
         mIsOpen(false), //
