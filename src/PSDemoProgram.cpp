@@ -336,7 +336,7 @@ main(int argc, char **argv)
 			printf("UART port: %s\r\n\n", lUARTName);
 
 			// configure the UART
-			lClientUART.config(lUARTName, 1, lLogFile);
+			lClientUART.config(lUARTName, 10, lLogFile);
 
 			// open the UART
 			if (ERR_SUCCESS != lClientUART.open())
