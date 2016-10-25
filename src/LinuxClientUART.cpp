@@ -118,7 +118,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	int state = 0;
 	int32_t length = INT32_MAX;
 
-	#if DEBUG_READ
+#if DEBUG_READ
 	printf("Reading UART data!\r\n");
 #endif
 
