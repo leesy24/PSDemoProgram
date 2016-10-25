@@ -27,8 +27,8 @@
 #include <cstring>
 #include <cstdio>
 
-//#define DEBUG_WRITE
-//#define DEBUG_READ
+//#define DEBUG_WRITE 1
+//#define DEBUG_READ 1
 
 /*
  * Creates a socket and bind it to a server's address.
@@ -185,15 +185,24 @@ ClientSocket::open()
         return ERR_INVALID_HANDLE;
     }
 
-    // set timeout
-    status = setsockopt(mSocketHandle, SOL_SOCKET, SO_RCVTIMEO, lTimeout.asChar,
-            sizeof(lTimeout));
-    if (0 > status)
+    if (mTimeout == 0)
     {
-        fprintf(stderr,
-                "Socket error: Cannot initialize connection timeout! (%d)\r\n",
-                status);
-        return ERR_INVALID_HANDLE;
+    	// If iMode!=0, non-blocking mode is enabled.
+		u_long iMode=1;
+		ioctlsocket(mSocketHandle, FIONBIO, &iMode);
+    }
+    else
+    {
+		// set timeout
+		status = setsockopt(mSocketHandle, SOL_SOCKET, SO_RCVTIMEO, lTimeout.asChar,
+				sizeof(lTimeout));
+		if (0 > status)
+		{
+			fprintf(stderr,
+					"Socket error: Cannot initialize connection timeout! (%d)\r\n",
+					status);
+			return ERR_INVALID_HANDLE;
+		}
     }
 
     mIsOpen = true;
@@ -210,13 +219,25 @@ ClientSocket::read(void* buffer, int32_t size)
 {
     int32_t result = 0;
 
-    if (isOpen() && (0 != buffer) && (0 < size))
+#if DEBUG_READ
+	printf("Reading NET data!\r\n");
+#endif
+
+	if (isOpen() && (0 != buffer) && (0 < size))
     {
         result = recv(mSocketHandle, static_cast<char*>(buffer), size, 0);
 
         // OK?
         if (0 < result)
         {
+#if DEBUG_READ
+        	printf("Read %d byte NET data!\r\n", result);
+			for(int i = 0; i < result; i ++)
+			{
+				printf("0x%x ", *((unsigned char *)buffer+i));
+			}
+			printf("\r\n");
+#endif
             // write received byte into a log file
             if (0 != mLogFile)
             {
@@ -228,7 +249,7 @@ ClientSocket::read(void* buffer, int32_t size)
         {
             // get socket error ID. Handle Timeout
             result = -WSAGetLastError();
-            fprintf(stderr, "Socket error: cannot read (%d)\r\n", result);
+            //fprintf(stderr, "Socket error: cannot read (%d)\r\n", result);
             if (WSAETIMEDOUT == result)
             {
                 result = ERR_TIMEOUT;
