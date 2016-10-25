@@ -7,10 +7,12 @@
 
 #if __linux__
 
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 namespace unistd {
 	#include <unistd.h>
+	#include <arpa/inet.h>
 }
 namespace fcntl {
 	#include <fcntl.h>
@@ -18,8 +20,8 @@ namespace fcntl {
 #include <string.h>
 #include "LinuxClientUART.hpp"
 
-//#define DEBUG_WRITE
-//#define DEBUG_READ
+//#define DEBUG_WRITE 1
+#define DEBUG_READ 1
 
 ClientUART::ClientUART() :
         mIsOpen(false), //
@@ -111,24 +113,53 @@ ErrorID_t ClientUART::close()
 
 int32_t ClientUART::read(void* buffer, int32_t size)
 {
-	int32_t n;
-#if DEBUG_READ
+	ssize_t n;
+	int32_t total = 0;
+	int state = 0;
+	int32_t length = INT32_MAX;
+
+	#if DEBUG_READ
 	printf("Reading UART data!\r\n");
 #endif
 
-	n = unistd::read(tty_fd, buffer, size);
+	do
+	{
+		n = unistd::read(tty_fd, (unsigned char *)buffer + total, size - total);
+		if (n < 0)
+		{
+			if (total == 0)
+			{
+#if DEBUG_READ
+				printf("Read zero byte UART data!\r\n");
+#endif
+				return 0;
+			}
+			break;
+		}
+
+		total += n;
+#if DEBUG_READ
+		printf("Read total %d bytes!\r\n", total);
+#endif
+
+		if (state == 0) // Get length state.
+		{
+			if (total >= 8)
+			{
+				length = (int32_t)ntohl(*(unsigned int *)((unsigned char *)buffer + 4));
+#if DEBUG_READ
+				printf("Read format Length = %d\r\n", length);
+#endif
+				state = 1;
+			}
+		}
+	} while(total < length + 12);
 
 #if DEBUG_READ
-	if (n)
-	{
-		printf("Read %d byte UART data!\r\n", n);
-	}
-	else
-	{
-		printf("Read zero byte UART data!\r\n");
-	}
+	printf("Read %d byte UART data!\r\n", total);
 #endif
-	return n;
+
+	return total;
 }
 
 int32_t ClientUART::write(void* buffer, int32_t size)

@@ -9,8 +9,8 @@
 
 #include "WinClientUART.hpp"
 
-//#define DEBUG_WRITE
-//#define DEBUG_READ
+//#define DEBUG_WRITE 1
+//#define DEBUG_READ 1
 
 ClientUART::ClientUART() :
         mIsOpen(false), //
@@ -158,32 +158,56 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	DWORD NoBytesRead = 0;	// Bytes read by ReadFile()
 	DWORD dSize = (DWORD)size;
 	int32_t total = 0;
+	int state = 0;
+	int32_t length = INT32_MAX;
 
-	//printf("Reading UART data!\r\n");
+#if DEBUG_READ
+	printf("Reading UART data!\r\n");
+#endif
 	if (!mIsOpen)
 	{
-		//printf("Read error : UART not opened!\r\n");
+#if DEBUG_READ
+		printf("Read error : UART not opened!\r\n");
+#endif
 		return 0;
 	}
 
 	do
 	{
-		Status = ReadFile(hComm, (unsigned char *)buffer +  total, dSize - total, &NoBytesRead, NULL);
+		Status = ReadFile(hComm, (unsigned char *)buffer + total, dSize - total, &NoBytesRead, NULL);
 		if (Status == FALSE || NoBytesRead == 0)
 		{
 			if (total == 0)
 			{
-				//printf("Read zero byte UART data!\r\n");
+#if DEBUG_READ
+				printf("Read zero byte UART data!\r\n");
+#endif
 				return 0;
 			}
 			break;
 		}
+
 		total += (int32_t)NoBytesRead;
-	} while(1);
+#if DEBUG_READ
+		printf("Read total %d bytes!\r\n", total);
+#endif
+
+		if (state == 0) // Get length state.
+		{
+			if (total >= 8)
+			{
+				length = ntohl(*(unsigned int *)((unsigned char *)buffer + 4));
+#if DEBUG_READ
+				printf("Read format Length = %d\r\n", length);
+#endif
+				state = 1;
+			}
+		}
+	} while(total < length + 12);
 
 #if DEBUG_READ
 	printf("Read %d byte UART data!\r\n", total);
-	for(int i = 0; i < total; i ++)
+	for(int32_t i = 0; i < total; i ++)
 	{
 		printf("0x%x ", *((unsigned char *)buffer+i));
 	}
