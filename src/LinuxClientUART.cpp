@@ -7,12 +7,12 @@
 
 #if __linux__
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 namespace unistd {
 	#include <unistd.h>
-	#include <arpa/inet.h>
 }
 namespace fcntl {
 	#include <fcntl.h>
@@ -146,7 +146,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 		{
 			if (total >= 8)
 			{
-				length = (int32_t)ntohl(*(unsigned int *)((unsigned char *)buffer + 4));
+				length = (int32_t)ntohl(*(uint32_t *)((unsigned char *)buffer + 4));
 #if DEBUG_READ
 				printf("Read format Length = %d\r\n", length);
 #endif
