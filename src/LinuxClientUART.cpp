@@ -114,9 +114,9 @@ ErrorID_t ClientUART::close()
 int32_t ClientUART::read(void* buffer, int32_t size)
 {
 	ssize_t n;
-	int32_t total = 0;
-	int state = 0;
-	int32_t length = INT32_MAX - 12;
+	int32_t total = 0; // Init. total received data.
+	int state = 0; // Init. state machine for getting length data of UDP data format.
+	int32_t length = INT32_MAX - 12; // 12 = 4bytes Function code + 4bytes length + 4bytes CRC on UDP data format.
 
 #if DEBUG_READ
 	printf("Reading UART data!\r\n");
@@ -127,6 +127,13 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 		n = unistd::read(tty_fd, (unsigned char *)buffer + total, size - total);
 		if (n < 0)
 		{
+#if DEBUG_READ
+			printf("Read error UART data!\r\n");
+#endif
+			return n;
+		}
+		else if (n == 0)
+		{
 			if (total == 0)
 			{
 #if DEBUG_READ
@@ -134,26 +141,32 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 #endif
 				return 0;
 			}
-			break;
+			// If read() return zero byte on timeout than break from loop.
+			if (mTimeout != 0)
+			{
+				break;
+			}
 		}
+
 
 		total += n;
 #if DEBUG_READ
 		printf("Read total %d bytes!\r\n", total);
 #endif
 
-		if (state == 0) // Get length state.
+		if (state == 0) // If state machine is getting length data.
 		{
-			if (total >= 8)
+			if (total >= 8) // If total received data is enough to get length data.
 			{
+				// Get length data from network endians data.
 				length = (int32_t)ntohl(*(uint32_t *)((unsigned char *)buffer + 4));
 #if DEBUG_READ
 				printf("Read format Length = %d\r\n", length);
 #endif
-				state = 1;
+				state = 1; // Set state machine to other.
 			}
 		}
-	} while(total < length + 12);
+	} while(total < length + 12); // Loop until total received data should reach as UDP data format(Function Code + Length + Data + CRC).
 
 #if DEBUG_READ
 	printf("Read %d byte UART data!\r\n", total);

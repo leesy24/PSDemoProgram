@@ -157,34 +157,46 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	BOOL  Status;			// Status of the various operations
 	DWORD NoBytesRead = 0;	// Bytes read by ReadFile()
 	DWORD dSize = (DWORD)size;
-	int32_t total = 0;
-	int state = 0;
-	int32_t length = INT32_MAX - 12;
+	int32_t total = 0; // Init. total received data.
+	int state = 0; // Init. state machine for getting length data of UDP data format.
+	int32_t length = INT32_MAX - 12; // 12 = 4bytes Function code + 4bytes length + 4bytes CRC on UDP data format.
 
 #if DEBUG_READ
-	//printf("Reading UART data!\r\n");
+	printf("Reading UART data!\r\n");
 #endif
 	if (!mIsOpen)
 	{
 #if DEBUG_READ
 		printf("Read error : UART not opened!\r\n");
 #endif
-		return 0;
+		return -1;
 	}
 
 	do
 	{
 		Status = ReadFile(hComm, (unsigned char *)buffer + total, dSize - total, &NoBytesRead, NULL);
-		if (Status == FALSE || NoBytesRead == 0)
+		if (Status == FALSE)
+		{
+#if DEBUG_READ
+			printf("Read error UART data!\r\n");
+#endif
+			return -1;
+		}
+
+		if (NoBytesRead == 0)
 		{
 			if (total == 0)
 			{
 #if DEBUG_READ
-				//printf("Read zero byte UART data!\r\n");
+				printf("Read zero byte UART data!\r\n");
 #endif
 				return 0;
 			}
-			break;
+			// If read() return zero byte on timeout than break from loop.
+			if (mTimeout != 0)
+			{
+				break;
+			}
 		}
 
 		total += (int32_t)NoBytesRead;
@@ -192,18 +204,19 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 		printf("Read total %d bytes!\r\n", total);
 #endif
 
-		if (state == 0) // Get length state.
+		if (state == 0) // If state machine is getting length data.
 		{
-			if (total >= 8)
+			if (total >= 8) // If total received data is enough to get length data.
 			{
+				// Get length data from network endians data.
 				length = ntohl(*(unsigned int *)((unsigned char *)buffer + 4));
 #if DEBUG_READ
 				printf("Read format Length = %d\r\n", length);
 #endif
-				state = 1;
+				state = 1; // Set state machine to other.
 			}
 		}
-	} while(total < length + 12);
+	} while(total < length + 12); // Loop until total received data should reach as UDP data format(Function Code + Length + Data + CRC).
 
 #if DEBUG_READ
 	printf("Read %d byte UART data!\r\n", total);
