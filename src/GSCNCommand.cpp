@@ -20,6 +20,9 @@
  */
 
 #include "GSCNCommand.hpp"
+#include <stdio.h>
+
+//#define DEBUG_PARSE 1
 
 /* Constructor */
 GSCNCommand::GSCNCommand(IDataStream & theDataStream) :
@@ -77,15 +80,25 @@ GSCNCommand::parseScan(Scan_t& theScan)
         theScan.mNumberOfParameter = lNumberOfParameter;
     }
 
+#if DEBUG_PARSE
+    printf("Number of parameters = %d, %d\r\n", lNumberOfParameter, theScan.mNumberOfParameter);
+#endif
+
     // copy known parameter to scan
     for (int32_t l = 0; l < theScan.mNumberOfParameter; l++)
     {
         theScan.mParameter[l] = *lIntegerPtr++;
+#if DEBUG_PARSE
+        printf("parameter[%d] = %d(0x%x)\r\n", l, theScan.mParameter[l], theScan.mParameter[l]);
+#endif
     }
 
     // skip unkown parameter
     for (int32_t l = theScan.mNumberOfParameter; l < lNumberOfParameter; l++)
     {
+#if DEBUG_PARSE
+        printf("parameter[%d] = %d(0x%x)\r\n", l, *lIntegerPtr, *lIntegerPtr);
+#endif
         lIntegerPtr++;
     }
 
@@ -98,6 +111,9 @@ GSCNCommand::parseScan(Scan_t& theScan)
 
     // take number of points, check limits
     theScan.mNumberOfPoints = *lIntegerPtr++;
+#if DEBUG_PARSE
+    printf("Number of points = %d\r\n", theScan.mNumberOfPoints);
+#endif
     if ((MAX_NUMBER_OF_ECHOS < theScan.mNumberOfEchoes) || (MAX_POINTS_PER_SCAN < theScan.mNumberOfPoints))
     {
         clearScan(theScan);
