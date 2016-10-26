@@ -435,6 +435,7 @@ ScanPrint::run()
     {
         // SCAN command: start the scan sequence
         logMessage("Starting Scan... \\ /  \r\n");
+        mSCANCommand.setParameter(1);
         result = mSCANCommand.performCommand();
 
         // prepare table
@@ -472,6 +473,12 @@ ScanPrint::run()
 
         // terminal mode restore on linux for kbhit of isTerminated().
         changemode(0);
+
+        // SCAN command: end the scan sequence
+        logMessage("End Scan... \\ /  \r\n");
+        mSCANCommand.setParameter(0);
+        result = mSCANCommand.performCommand();
+
     } // end terminate condition OK.
     return result;
 }
