@@ -41,8 +41,8 @@ extern "C"
 #include <cstring>
 #include <cstdio>
 
-//#define DEBUG_WRITE
-//#define DEBUG_READ
+//#define DEBUG_WRITE 1
+//#define DEBUG_READ 1
 
 /*
  * Creates a socket and bind it to a server's address.

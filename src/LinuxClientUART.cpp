@@ -170,6 +170,12 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 
 #if DEBUG_READ
 	printf("Read %d byte UART data!\r\n", total);
+	for(int32_t i = 0; i < total; i ++)
+	{
+		//printf("0x%x('%c') ", *((unsigned char *)buffer+i), *((unsigned char *)buffer+i));
+		printf("0x%x ", *((unsigned char *)buffer+i));
+	}
+	printf("\r\n");
 #endif
 
 	return total;
@@ -183,6 +189,7 @@ int32_t ClientUART::write(void* buffer, int32_t size)
 	printf("Writing UART data %d bytes!\r\n", size);
 	for(int i = 0; i < size; i ++)
 	{
+		//printf("0x%x('%c') ", *((unsigned char *)buffer+i), *((unsigned char *)buffer+i));
 		printf("0x%x ", *((unsigned char *)buffer+i));
 	}
 	printf("\r\n");
