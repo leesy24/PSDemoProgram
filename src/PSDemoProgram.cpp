@@ -45,7 +45,9 @@
 #include "GVERCommand.hpp"
 #include "ProgramVersion.hpp"
 #include "ScanSequence.hpp"
+#include "Scan2Sequence.hpp"
 #include "ScanPrint.hpp"
+#include "Scan2Print.hpp"
 #include "SPRMCommand.hpp"
 #include "KbhitGetch.h"
 
@@ -160,7 +162,7 @@ testSCAN(IDataStream& theDataStream, FILE* theTerminalLogFile)
 /**
  */
 void
-testSCPR(IDataStream& theDataStream, FILE* theTerminalLogFile)
+testSCANPR(IDataStream& theDataStream, FILE* theTerminalLogFile)
 {
     ScanPrint lScanPrint(theDataStream);
     lScanPrint.setTerminalLogFile(theTerminalLogFile);
@@ -170,10 +172,32 @@ testSCPR(IDataStream& theDataStream, FILE* theTerminalLogFile)
 /**
  */
 void
+testSCN2(IDataStream& theDataStream, FILE* theTerminalLogFile)
+{
+    Scan2Sequence lScanSequence(theDataStream);
+    lScanSequence.setTerminalLogFile(theTerminalLogFile);
+    lScanSequence.run();
+}
+
+/**
+ */
+void
+testSCN2PR(IDataStream& theDataStream, FILE* theTerminalLogFile)
+{
+    Scan2Print lScan2Print(theDataStream);
+    lScan2Print.setTerminalLogFile(theTerminalLogFile);
+    lScan2Print.run();
+}
+
+/**
+ */
+void
 testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile)
 {
 	int32_t read_len;
-	unsigned char read_data[64 * 1024];
+	char read_data[64 * 1024];
+	bool flag_GSC2 = false;
+	int32_t param_GSC2_AvgNumber = 1;
 
     // terminal mode change on linux for kbhit of isTerminated().
     changemode(1);
@@ -183,11 +207,266 @@ testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile
 		// if new data is available on the serial port, print it out
 		if ((read_len = theUART.read(read_data, sizeof(read_data))) > 0)
 		{
+			flag_GSC2 = false;
+			if (!strncmp(read_data, "GSC2", 4))
+			{
+		        CRC32 lCRC;
+		        cast_ptr_t lBufferPtr = { read_data }; // casts the buffer to an array of integer
+		        int32_t lCRCPosition = (4 + 4 + 4 + 4) / sizeof(int32_t) - 1; // position of the CRC in the buffer
+		        uint32_t lCRCValue;
+		        int32_t lLength;
+		        int32_t lScanNumber;
+		        int32_t lAvgNumber;
+
+		        lLength = ntohl(lBufferPtr.asIntegerPtr[1]);
+		        lScanNumber = ntohl(lBufferPtr.asIntegerPtr[2]);
+		        param_GSC2_AvgNumber = lAvgNumber = ntohl(lBufferPtr.asIntegerPtr[3]);
+#if 0
+		        printf("GSC2: Length = %d\r\n", lLength);
+		        printf("GSC2: ScanNumber = %d\r\n", lScanNumber);
+		        printf("GSC2: AvgNumber = %d\r\n", lAvgNumber);
+#endif
+				strncpy((char *)lBufferPtr.asIntegerPtr + 0, "GSCN", 4);
+				lBufferPtr.asIntegerPtr[1] = htonl(4); // Length
+				lBufferPtr.asIntegerPtr[2] = htonl(lScanNumber); // Scan Number
+				lCRCValue = lCRC.get(lBufferPtr.asIntegerPtr + 0, (4 + 4 + 4 + 4) - 4);
+		        lBufferPtr.asIntegerPtr[lCRCPosition] = htonl(lCRCValue);
+		        read_len = (4 + 4 + 4 + 4);
+		        if (lAvgNumber > 1)
+		        	flag_GSC2 = true;
+			}
 			theSocket.write(read_data, read_len);
 		}
 		// if new data is available on the console, send it to the serial port
 		if ((read_len = theSocket.read(read_data, sizeof(read_data))) > 0)
 		{
+			while (flag_GSC2 && !strncmp(read_data, "GSCN", 4))
+			{
+			    CRC32 lCRC;
+			    // type safe cast. CRC in network byte order is expected in the last 4 bytes of the buffer
+			    cast_ptr_t lCRCReceivedPtr = { read_data + (read_len - 4) };
+			    uint32_t lCRCExpected = ntohl(*lCRCReceivedPtr.asIntegerPtr);
+			    uint32_t lCRCReceived = lCRC.get(read_data, read_len - 4);
+
+#if 0
+			    printf("GSC2: CRC expected:0x%x, received:0x%x\n", lCRCExpected, lCRCReceived);
+#endif
+			    if (lCRCExpected != lCRCReceived)
+			    {
+			    	break;
+			    }
+
+				// set moving integer pointer; skip command ID and length
+				cast_ptr_t lDataPtr = { read_data };
+				int32_t* lRcvIntegerPtr = &lDataPtr.asIntegerPtr[1];
+				int32_t lLength;
+				int32_t lSendLength;
+				// take length of parameter block
+				int32_t lNumberOfParameter;
+				int32_t lNumberOfParameterExpected;
+				int32_t lNumberOfEchoes = 0;
+				int32_t lDataContent = 0;
+				int32_t lNumberOfPoints = 0;
+				int32_t lSendNumberOfPoints = 0;
+
+				lLength = ntohl(*lRcvIntegerPtr++);
+#if 0
+				printf("Length = %d\r\n", lLength);
+#endif
+
+				lNumberOfParameter = ntohl(*lRcvIntegerPtr++);
+				// check compatibility of firmware and control program
+				if (lNumberOfParameter > 10 /*NUMBER_OF_SCAN_PARAMETER*/)
+				{
+					lNumberOfParameterExpected = 10 /*NUMBER_OF_SCAN_PARAMETER*/;
+				}
+				else
+				{
+					lNumberOfParameterExpected = lNumberOfParameter;
+				}
+#if 0
+				printf("Number of parameters = %d, %d\r\n", lNumberOfParameter, lNumberOfParameterExpected);
+#endif
+
+				// copy known parameter to scan
+				for (int32_t l = 0; l < lNumberOfParameterExpected; l++)
+				{
+#if 0
+					printf("parameter[%d] = %d(0x%x)\r\n", l, ntohl(*lRcvIntegerPtr), ntohl(*lRcvIntegerPtr));
+#endif
+					if (l == 4 /* PARAMETER_NUMBER_OF_ECHOES */)
+					{
+						lNumberOfEchoes = ntohl(*lRcvIntegerPtr);
+					}
+					if (l == 8 /* PARAMETER_DATA_CONTENT */)
+					{
+						lDataContent = ntohl(*lRcvIntegerPtr);
+					}
+					lRcvIntegerPtr++;
+				}
+
+				// skip unkown parameter
+				for (int32_t l = lNumberOfParameterExpected; l < lNumberOfParameter; l++)
+				{
+#if 0
+					printf("parameter[%d] = %d(0x%x)\r\n", l, ntohl(*lRcvIntegerPtr), ntohl(*lRcvIntegerPtr));
+#endif
+					lRcvIntegerPtr++;
+				}
+
+				// get number of echoes. If 0, then the master echo is transfered instead of the number
+#if 0
+				printf("Data Content = %d\r\n", lDataContent);
+#endif
+
+#if 0
+				printf("Number of echoes = %d\r\n", lNumberOfEchoes);
+#endif
+				if (0 == lNumberOfEchoes)
+				{
+					lNumberOfEchoes = 1;
+				}
+
+				// take number of points, check limits
+				lNumberOfPoints = ntohl(*lRcvIntegerPtr++);
+#if 0
+				printf("Number of points = %d\r\n", lNumberOfPoints);
+#endif
+
+				if ((4 /* MAX_NUMBER_OF_ECHOS */ < lNumberOfEchoes) || (4000 /* MAX_POINTS_PER_SCAN */ < lNumberOfPoints))
+				{
+					break;
+				}
+
+				// copy data block according to the data content.
+				if (1 /* lDataContent == 4 */ /* DATABLOCK_WITH_DISTANCES */)
+				{
+		        	int32_t lCnt = 0;
+		        	int32_t lDistanceSum = 0;
+		        	int32_t lSumCnt = 0;
+					int32_t* lSendIntegerPtr = lRcvIntegerPtr;
+
+		        	for (int32_t lPoints = 0; lPoints < lNumberOfPoints; lPoints++)
+					{
+						// loop for each point through all echos
+						for (int32_t lEchos = 0; lEchos < lNumberOfEchoes; lEchos++)
+						{
+		                	int32_t lDistance;
+
+		                	lDistance = ntohl(*lRcvIntegerPtr++);
+		                	if (lDataContent != 4)
+		                	{
+		                		lRcvIntegerPtr++;
+		                	}
+
+		            		lCnt ++;
+
+		            		if ((uint32_t)lDistance == 0x80000000)
+		                	{
+		                		if (lSumCnt == 0)
+		                		{
+		                			lDistanceSum = lDistance;
+		                		}
+		                	}
+		                	else if ((uint32_t)lDistance == 0x7FFFFFFF)
+		                	{
+		                		if (lSumCnt == 0)
+		                		{
+		                			lDistanceSum = lDistance;
+		                		}
+		                	}
+		                	else
+		                	{
+		                		if (lSumCnt == 0)
+		                		{
+		                			lDistanceSum = 0;
+		                		}
+		                		lSumCnt ++;
+		                		lDistanceSum += lDistance;
+		                	}
+
+		                	if (lCnt == param_GSC2_AvgNumber)
+		                	{
+		                		if (lSumCnt > 0)
+		                		{
+			                		*lSendIntegerPtr++ = htonl(lDistanceSum / lSumCnt);
+#if 0
+			                		printf("%4d:%2d:", lPoints, lSumCnt);
+		                			for (int32_t lSpaceCnt = 0; lSpaceCnt < ((lDistanceSum / lSumCnt) - 15000) / 500; lSpaceCnt ++)
+		                			{
+		                				printf("-");
+		                			}
+		            				printf("|\r\n");
+#endif
+		                		}
+		                		else
+		                		{
+			                		*lSendIntegerPtr++ = htonl(lDistanceSum);
+#if 0
+		                			printf("%4d:%2d:%-8s\r\n", lPoints, lSumCnt, (uint32_t)lDistanceSum == 0x80000000 ? "Low" : "Noise");
+#endif
+		                		}
+
+		                		if (lDataContent != 4)
+			                	{
+			                		lSendIntegerPtr++;
+			                	}
+			                	lSendNumberOfPoints ++;
+
+			                	lCnt = 0;
+		                		lDistanceSum = 0;
+		                		lSumCnt = 0;
+		                	}
+						} // end echos
+		                if ((lPoints == (lNumberOfPoints - 1)) && (lCnt != 0))
+		            	{
+		            		if (lSumCnt > 0)
+		            		{
+		                		*lSendIntegerPtr++ = htonl(lDistanceSum / lSumCnt);
+#if 0
+		            			printf("%4d:%2d:", lPoints, lSumCnt);
+		            			for (int32_t lSpaceCnt = 0; lSpaceCnt < ((lDistanceSum / lSumCnt) - 15000) / 500; lSpaceCnt ++)
+		            			{
+		            				printf("-");
+		            			}
+		        				printf("|\r\n");
+#endif
+		            		}
+		            		else
+		            		{
+		                		*lSendIntegerPtr++ = htonl(lDistanceSum);
+#if 0
+		            			printf("%4d:%2d:%-8s\r\n", lPoints, lSumCnt, (uint32_t)lDistanceSum == 0x80000000 ? "Low" : "Noise");
+#endif
+		            		}
+
+		            		if (lDataContent != 4)
+		                	{
+		                		lSendIntegerPtr++;
+		                	}
+		                	lSendNumberOfPoints ++;
+		            	}
+					} // end points
+				}
+
+		        int32_t lCRCPosition; // position of the CRC in the buffer
+		        uint32_t lCRCValue;
+
+		        lSendLength = 4 + 4 * lNumberOfParameter + 4 + (lDataContent == 4 ? 4 : 8) * lSendNumberOfPoints;
+		        lCRCPosition = (8 + lSendLength + 4) / sizeof(int32_t) - 1;
+				lDataPtr.asIntegerPtr[1] = htonl(lSendLength); // Length
+				lDataPtr.asIntegerPtr[12] = htonl(lSendNumberOfPoints); // Number of points
+				lCRCValue = lCRC.get(lDataPtr.asIntegerPtr + 0,  8 + lSendLength);
+				lDataPtr.asIntegerPtr[lCRCPosition] = htonl(lCRCValue);
+		        read_len = 8 + lSendLength + 4;
+#if 0
+		        printf("Send Length = %d\r\n", lSendLength);
+				printf("Send Number of points = %d\r\n", lSendNumberOfPoints);
+				printf("Send CRCPosition = %d\r\n", lCRCPosition);
+				printf("Send CRCValue = 0x%%x\r\n", lCRCValue);
+#endif
+		        break;
+			}
 			theUART.write(read_data, read_len);
 		}
 	} while((kbhit() == 0) || (getch() != 'q'));
@@ -357,8 +636,13 @@ main(int argc, char **argv)
 	                " 2 - GPRM: Getting a sensor parameter\r\n"
 	                " 3 - SPRM: Setting a sensor parameter\r\n"
 	                " 4 - SCAN: Starting a scan sequence\r\n"
-	                " 5 - SCPR: Getting a scan data and print graph\r\n"
-	                " 0 - Exit\r\n> ");
+	                " 5 - SCANPR: Getting a scan data and print graph\r\n");
+	        if (!strcmp(argv[1], "UART"))
+	        {
+	        printf( " 6 - SCN2: Starting a scan2 sequence\r\n"
+	                " 7 - SCN2PR: Getting a scan2 data and print graph\r\n");
+	        }
+	        printf( " 0 - Exit\r\n> ");
 	        fscanf(stdin, "%d", &lSelection);
 
 	        switch (lSelection)
@@ -380,7 +664,15 @@ main(int argc, char **argv)
 	                break;
 
 	            case 5:
-	                testSCPR(*lpDataSteam, lTerminalLogFile);
+	                testSCANPR(*lpDataSteam, lTerminalLogFile);
+	                break;
+
+	            case 6:
+	                testSCN2(*lpDataSteam, lTerminalLogFile);
+	                break;
+
+	            case 7:
+	                testSCN2PR(*lpDataSteam, lTerminalLogFile);
 	                break;
 
 	            case 0:
