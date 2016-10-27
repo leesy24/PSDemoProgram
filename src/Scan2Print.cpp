@@ -336,7 +336,7 @@ Scan2Print::run()
             }
 
             // sleep 1000msec
-            //sleep_msecs(1000);
+            sleep_msecs(1000);
         } // end while not terminated
 
         // terminal mode restore on linux for kbhit of isTerminated().
