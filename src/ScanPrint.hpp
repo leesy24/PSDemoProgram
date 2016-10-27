@@ -114,6 +114,9 @@ class ScanPrint
         /** the terminal log file */
         FILE* mTerminalLogFile;
 
+        /** number of the average count */
+        int32_t mAvgNumber;
+
         /**
          * Returns the current system time in ms.
          * Watch out for timer overflows.
@@ -158,15 +161,6 @@ class ScanPrint
          */
         virtual ErrorID_t
         logTableHeader();
-
-        /**
-         * Log the scan in a file or on the console.
-         *
-         * @return
-         *      ERR_SUCCESS on success, otherwise a negative error code.
-         */
-        virtual ErrorID_t
-        logScan_org();
 
         /**
          * Log the scan in a file or on the console.

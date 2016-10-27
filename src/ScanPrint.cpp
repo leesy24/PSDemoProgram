@@ -184,90 +184,6 @@ ScanPrint::logError(int theError)
  * Log the scan in a file or on the console.
  */
 ErrorID_t
-ScanPrint::logScan_org()
-{
-    // temp. copy of recent scan data
-    string128_t lTextLine = { 0 };
-    int32_t lLastScannerTimeCode = mScannerTimeCode;
-    int32_t lLastScanNumber = mScanNumber;
-    int32_t lLogInterval = DEBUG_LOG_INTERVAL;
-    struct tm lLocalTime = getTime();
-
-    // valid scan?
-    if (0 != mScan.mNumberOfParameter)
-    {
-        mScannerTimeCode = mScan.mParameter[GSCNCommand::PARAMETER_TIME_STAMP];
-        mScanNumber = mScan.mParameter[GSCNCommand::PARAMETER_SCAN_NUMBER];
-        const int32_t lLostScans = mScanNumber - lLastScanNumber - 1;
-
-        // this is the 1st scan.
-        if (0 == lLastScanNumber)
-        {
-            lLastScannerTimeCode = mScannerTimeCode;
-        }
-
-        // print result
-        if ((0 < lLostScans) // if there there are lost scans
-        || (0 == (mScanNumber % lLogInterval)) // or regular interval has expired
-                || (0 == lLastScanNumber)) // or 1st scan
-        {
-            for (int32_t lPoints = 0; lPoints < mScan.mNumberOfPoints; lPoints++)
-            {
-            	int32_t lSignalOn = 0;
-
-                // loop for each point through all echos
-                for (int32_t lEchoes = 0; lEchoes < mScan.mNumberOfEchoes; lEchoes++)
-                {
-                	int32_t lDistance = mScan.mScanData[lPoints][lEchoes].mDistance;
-                	int32_t lPulseWidth = mScan.mScanData[lPoints][lEchoes].mPulseWidth;
-                	if ((uint32_t)lDistance == 0x80000000)
-                	{
-                		if (lSignalOn == 1)
-                		{
-                			printf("%3d:%2d:%12s:%12d\r\n", lPoints, lEchoes, "Low", lPulseWidth);
-                		}
-                	}
-                	else if ((uint32_t)lDistance == 0x7FFFFFFF)
-                	{
-                		if (lSignalOn == 1)
-                		{
-                			printf("%3d:%2d:%12s:%12d\r\n", lPoints, lEchoes, "Noise", lPulseWidth);
-                		}
-                	}
-                	else
-                	{
-                		if (lSignalOn == 0)
-                		{
-                			lSignalOn = 1;
-                		}
-                		printf("%3d:%2d:%12d:%12d\r\n", lPoints, lEchoes, lDistance, lPulseWidth);
-                	}
-                } // end echos
-            } // end points
-        }
-    } // end valid scan
-
-    // empty scan
-    else
-    {
-    }
-
-    // log on screen and to file
-    if (0 != lTextLine[0])
-    {
-        printf(lTextLine);
-        if (0 != mTerminalLogFile)
-        {
-            fputs(lTextLine, mTerminalLogFile);
-        }
-    }
-    return ERR_SUCCESS;
-}
-
-/*
- * Log the scan in a file or on the console.
- */
-ErrorID_t
 ScanPrint::logScan()
 {
     // temp. copy of recent scan data
@@ -333,7 +249,7 @@ ScanPrint::logScan()
                 		lDistanceSum += lDistance;
                 	}
 
-                	if (lCnt == 10)
+                	if (lCnt == mAvgNumber)
                 	{
                 		if (lSumCnt > 0)
                 		{
@@ -428,6 +344,14 @@ ScanPrint::run()
     mScanNumber = 0;
     mScannerTimeCode = 0;
     mNumberOfScans = 0;
+
+    // ask average value
+    fprintf(stdout, "> Average count : ");
+    fscanf(stdin, "%d", &mAvgNumber);
+    if (mAvgNumber <= 0)
+    {
+    	mAvgNumber = 1;
+    }
 
     // ask for the terminating condition
     result = setTerminateCondition();
