@@ -149,7 +149,7 @@ ClientSocket::setTimeout(int32_t theTimeout)
  * Defines a log file to save received data.
  */
 void
-ClientSocket::setLogFile(FILE* theLogFile)
+ClientSocket::setDataLogFile(FILE* theLogFile)
 {
     mLogFile = theLogFile;
 }

@@ -214,7 +214,7 @@ private:
          *      Pointer at a file handle; set to 0 to disable logging.
          */
         void
-        setLogFile(FILE* theLogFile);
+        setDataLogFile(FILE* theLogFile);
 
         /**
          * Defines a timeout.

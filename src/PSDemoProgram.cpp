@@ -526,7 +526,7 @@ main(int argc, char **argv)
 #else // if __linux__
     string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default client UART port.
 #endif
-    FILE* lDataLogFile = 0;
+    //FILE* lDataLogFile = 0;
     FILE* lTerminalLogFile = 0;
 
     // In Eclipse CDT on Windows, standard output of the program being run or
@@ -594,7 +594,7 @@ main(int argc, char **argv)
 			if (7 <= argc)
 			{
 				strcpy(lDataLogFileName, argv[6]);
-				lDataLogFile = fopen(lDataLogFileName, "wb");
+				//lDataLogFile = fopen(lDataLogFileName, "wb");
 			}
 			if (8 <= argc)
 			{
@@ -608,13 +608,13 @@ main(int argc, char **argv)
 			// create the socket
 			lClientSocket.setClientIPAddress(lClientName, lClientPort);
 			lClientSocket.setServerIPAddress(lServerName, lServerPort);
-			lClientSocket.setLogFile(lDataLogFile);
+			//lClientSocket.setDataLogFile(lDataLogFile);
 			lClientSocket.setTimeout(10);
 
 			// open the socket
 			if (ERR_SUCCESS != lClientSocket.open())
 			{
-				if (lDataLogFile) fclose(lDataLogFile);
+				//if (lDataLogFile) fclose(lDataLogFile);
 				if (lTerminalLogFile) fclose(lTerminalLogFile);
 				fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
 				return ERR_IO;
@@ -633,7 +633,7 @@ main(int argc, char **argv)
 			if (argc >= 4)
 			{
 				strcpy(lDataLogFileName, argv[3]);
-				lDataLogFile = fopen(lDataLogFileName, "wb");
+				//lDataLogFile = fopen(lDataLogFileName, "wb");
 			}
 			if (argc >= 5)
 			{
@@ -644,12 +644,12 @@ main(int argc, char **argv)
 			printf("UART port: %s\r\n\n", lUARTName);
 
 			// configure the UART
-			lClientUART.config(lUARTName, 10, lDataLogFile);
+			lClientUART.config(lUARTName, 10, 0/*lDataLogFile*/);
 
 			// open the UART
 			if (ERR_SUCCESS != lClientUART.open())
 			{
-				if (lDataLogFile) fclose(lDataLogFile);
+				//if (lDataLogFile) fclose(lDataLogFile);
 				if (lTerminalLogFile) fclose(lTerminalLogFile);
 				fprintf(stderr, "Error: Cannot open UART connection!\r\n");
 				return ERR_IO;
@@ -748,7 +748,7 @@ main(int argc, char **argv)
 		if (8 <= argc)
 		{
 			strcpy(lDataLogFileName, argv[7]);
-			lDataLogFile = fopen(lDataLogFileName, "wb");
+			//lDataLogFile = fopen(lDataLogFileName, "wb");
 		}
 		if (9 <= argc)
 		{
@@ -759,12 +759,12 @@ main(int argc, char **argv)
 		printf("Sensor IP: %s:%d and Local IP: %s:%d\r\n\n", lServerName, lServerPort, lClientName, lClientPort);
 
 		// configure the UART
-		lClientUART.config(lUARTName, 0, lDataLogFile);
+		lClientUART.config(lUARTName, 0, 0/*lDataLogFile*/);
 
 		// open the UART
 		if (ERR_SUCCESS != lClientUART.open())
 		{
-			if (lDataLogFile) fclose(lDataLogFile);
+			//if (lDataLogFile) fclose(lDataLogFile);
 			if (lTerminalLogFile) fclose(lTerminalLogFile);
 			fprintf(stderr, "Error: Cannot open UART connection!\r\n");
 			return ERR_IO;
@@ -773,13 +773,13 @@ main(int argc, char **argv)
 		// create the socket
 		lClientSocket.setClientIPAddress(lClientName, lClientPort);
 		lClientSocket.setServerIPAddress(lServerName, lServerPort);
-		lClientSocket.setLogFile(lDataLogFile);
+		//lClientSocket.setDataLogFile(lDataLogFile);
 		lClientSocket.setTimeout(0);
 
 		// open the socket
 		if (ERR_SUCCESS != lClientSocket.open())
 		{
-			if (lDataLogFile) fclose(lDataLogFile);
+			//if (lDataLogFile) fclose(lDataLogFile);
 			if (lTerminalLogFile) fclose(lTerminalLogFile);
 			fprintf(stderr, "Error: Cannot open sensor IP connection!\r\n");
 			return ERR_IO;
@@ -798,7 +798,7 @@ main(int argc, char **argv)
     {
     	lClientUART.close();
     }
-    if (lDataLogFile) fclose(lDataLogFile);
+    //if (lDataLogFile) fclose(lDataLogFile);
     if (lTerminalLogFile) fclose(lTerminalLogFile);
     printf("Bye-bye.\r\n");
     return 0;
