@@ -152,21 +152,21 @@ testSPRM(IDataStream& theDataStream)
  * collects scans by use of GSCN and do some Test evaluations with the data.
  */
 void
-testSCAN(IDataStream& theDataStream, FILE* theTerminalLogFile)
+testSCAN(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTerminalLogFile)
 {
     ScanSequence lScanSequence(theDataStream);
     lScanSequence.setTerminalLogFile(theTerminalLogFile);
-    lScanSequence.run();
+    lScanSequence.run(theDataLogFileName);
 }
 
 /**
  */
 void
-testSCANPR(IDataStream& theDataStream, FILE* theTerminalLogFile)
+testSCANPR(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTerminalLogFile)
 {
     ScanPrint lScanPrint(theDataStream);
     lScanPrint.setTerminalLogFile(theTerminalLogFile);
-    lScanPrint.run();
+    lScanPrint.run(theDataLogFileName);
 }
 
 /**
@@ -604,6 +604,7 @@ main(int argc, char **argv)
 
 			printf("Sensor IP: %s:%d\r\nLocal IP: %s:%d\r\n\n", lServerName,
 					lServerPort, lClientName, lClientPort);
+			printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 			// create the socket
 			lClientSocket.setClientIPAddress(lClientName, lClientPort);
@@ -689,11 +690,11 @@ main(int argc, char **argv)
 	                break;
 
 	            case 4:
-	                testSCAN(*lpDataSteam, lTerminalLogFile);
+	                testSCAN(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	                break;
 
 	            case 5:
-	                testSCANPR(*lpDataSteam, lTerminalLogFile);
+	                testSCANPR(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	                break;
 
 	            case 6:

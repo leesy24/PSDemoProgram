@@ -163,7 +163,7 @@ class GSCNCommand : private CommandBase
          *      ERR_SUCCESS on success, otherwise a negative error code.
          */
         ErrorID_t
-        performCommand(int32_t theScanNumber, Scan_t& theScan);
+        performCommand(int32_t theScanNumber, Scan_t& theScan, char* theDataLogFileName);
 };
 
 #endif /* GSCNCOMMAND_HPP_ */

@@ -165,7 +165,7 @@ GSCNCommand::parseScan(Scan_t& theScan)
  * Performs the GSCN command.
  */
 ErrorID_t
-GSCNCommand::performCommand(int32_t theScanNumber, Scan_t &theScan)
+GSCNCommand::performCommand(int32_t theScanNumber, Scan_t &theScan, char* theDataLogFileName)
 {
     ErrorID_t result = ERR_SUCCESS;
 
@@ -184,6 +184,13 @@ GSCNCommand::performCommand(int32_t theScanNumber, Scan_t &theScan)
     // convert to host byte order and copy
     if (ERR_SUCCESS == result)
     {
+        FILE* lDataLogFile = 0;
+        lDataLogFile = fopen(theDataLogFileName, "wb");
+        if (lDataLogFile)
+        {
+        	fwrite(mBuffer, mBytesReceived, 1, lDataLogFile);
+        	fclose(lDataLogFile);
+        }
         convertNetworkToHost(mBuffer, mBytesReceived);
         result = parseScan(theScan);
     }
