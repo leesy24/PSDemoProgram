@@ -1,10 +1,10 @@
-Message-ID: <732829579.9242.1492144627580.JavaMail.JIRA$@JIRA>
+Message-ID: <1232872389.9296.1492148011352.JavaMail.JIRA$@JIRA>
 Subject: Exported From Confluence
 MIME-Version: 1.0
 Content-Type: multipart/related; 
-	boundary="----=_Part_9241_1980519019.1492144627580"
+	boundary="----=_Part_9295_1220945982.1492148011352"
 
-------=_Part_9241_1980519019.1492144627580
+------=_Part_9295_1220945982.1492148011352
 Content-Type: text/html; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 Content-Location: file:///C:/exported.html
@@ -265,10 +265,15 @@ ev eth0</em></p><p><em><img class=3D"confluence-embedded-image" src=3D"5742=
 i>
 </ol>
 <p>&nbsp;</p>
+<h4 id=3D"id-[BeagleBoneBlack]SetstaticIPaddressoneth0-&lt;&lt;TIP&gt;&gt;"=
+>&lt;&lt;TIP&gt;&gt;</h4>
+<p>You can set auto IP with below command.</p>
+<p><em>&nbsp;* ex) sudo connmanctl config ethernet_6ceceb5cc3e2_cable --ipv=
+4 dhcp</em></p>
     </div>
 </body>
 </html>
-------=_Part_9241_1980519019.1492144627580
+------=_Part_9295_1220945982.1492148011352
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 Content-Location: file:///C:/57427274b42b66fdbbe0f5b18be49ba9
@@ -687,7 +692,7 @@ gAyQgUFkwH5zMdRPnVd/bzWmzoJ2ZIAMeBmo9Pkub4TeCSfy3HrHavcjT4bjOBnm2Ikzp5u8dTNW
 DJABMkAGesQAC68eEc+wZIAMkAEyQAbIwORjgIXX5DvmnDEZIANkgAyQATLQIwZYePWIeIYlA2SA
 DJABMkAGJh8DLLwm3zHnjMkAGSADZIAMkIEeMZB9q1H/7yC+yAAZIANkgAyQATJABjrLwP8PB6la
 L2Gk5ukAAAAASUVORK5CYII=
-------=_Part_9241_1980519019.1492144627580
+------=_Part_9295_1220945982.1492148011352
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 Content-Location: file:///C:/9fc1a3bef2197fc10f474e168121c7c2
@@ -1148,7 +1153,7 @@ xLiRAAmQAAmQAAmQAAkMTyC58Iq9lT98WkYgARIgARIgARIggdkjwEeNs7fPOWMSIAESIAESIIEx
 EeDCa0zgmZYESIAESIAESGD2CHDhNXv7nDMmARIgARIgARIYEwEuvMYEnmlJgARIgARIgARmjwAX
 XrO3zzljEiABEiABEiCBMREovtWo/+8gbiRAAiRAAiRAAiRAAu0S+P8Ba1Rx45pQMyYAAAAASUVO
 RK5CYII=
-------=_Part_9241_1980519019.1492144627580
+------=_Part_9295_1220945982.1492148011352
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 Content-Location: file:///C:/0e997eff93bde1a78fe017e43e48a909
@@ -1446,7 +1451,7 @@ KcWoctqOfCStYrX1ZOHtnIflXS1PGe82qnYU9DecCTTNX4H5w7mDFegbmZUOlexKZ8eWJDCcCNRs
 3dICCZAACZAACZAACdQfAU411t8xZ49JgARIgARIgAQGiQATr0ECT7ckQAIkQAIkQAL1R4CJV/0d
 c/aYBEiABEiABEhgkAgw8Rok8HRLAiRAAiRAAiRQfwSYeNXfMWePSYAESIAESIAEBomA81Sj/N9B
 /JAACZAACZAACZAACVSWwP8HtUxZ1/2vpOAAAAAASUVORK5CYII=
-------=_Part_9241_1980519019.1492144627580
+------=_Part_9295_1220945982.1492148011352
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 Content-Location: file:///C:/4f51eb6f9acb5485425bfe3ffb90919c
@@ -1770,4 +1775,4 @@ izeJ4QUCIAACIAACIAACIFA+AWfiFbcrv/xu4QEEQAAEQAAEQAAEhh8BLDUOv3OOEYMACIAACIAA
 CNSIABKvGoFHtyAAAiAAAiAAAsOPABKv4XfOMWIQAAEQAAEQAIEaEUDiVSPw6BYEQAAEQAAEQGD4
 EUDiNfzOOUYMAiAAAiAAAiBQIwLeU438fwfhBQIgAAIgAAIgAAIgUFkC/x/pZQdRF55ogwAAAABJ
 RU5ErkJggg==
-------=_Part_9241_1980519019.1492144627580--
+------=_Part_9295_1220945982.1492148011352--
