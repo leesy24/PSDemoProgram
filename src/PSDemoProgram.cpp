@@ -673,7 +673,10 @@ main(int argc, char **argv)
 	                " 7 - SCN2PR: Getting a scan2 data and print graph\r\n");
 	        }
 	        printf( " 0 - Exit\r\n> ");
+	        lSelection = -1;
 	        fscanf(stdin, "%d", &lSelection);
+	        while((getchar())!='\n');
+	        printf( "key input = %d\r\n> ", lSelection);
 
 	        switch (lSelection)
 	        {
@@ -698,11 +701,17 @@ main(int argc, char **argv)
 	                break;
 
 	            case 6:
-	                testSCN2(*lpDataSteam, lTerminalLogFile);
+	    	        if (!strcmp(argv[1], "UART"))
+	    	        {
+	    	        	testSCN2(*lpDataSteam, lTerminalLogFile);
+	    	        }
 	                break;
 
 	            case 7:
-	                testSCN2PR(*lpDataSteam, lTerminalLogFile);
+	    	        if (!strcmp(argv[1], "UART"))
+	    	        {
+	    	        	testSCN2PR(*lpDataSteam, lTerminalLogFile);
+	    	        }
 	                break;
 
 	            case 0:

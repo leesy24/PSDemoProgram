@@ -83,6 +83,19 @@ ErrorID_t ClientUART::open()
 	dcbSerialParams.ByteSize = 8;             // Setting ByteSize = 8
 	dcbSerialParams.StopBits = ONESTOPBIT;    // Setting StopBits = 1
 	dcbSerialParams.Parity = NOPARITY;        // Setting Parity = None
+	dcbSerialParams.fBinary = TRUE;
+	dcbSerialParams.fParity = FALSE;
+	dcbSerialParams.fOutxCtsFlow = FALSE;
+	dcbSerialParams.fOutxDsrFlow = FALSE;
+	dcbSerialParams.fDtrControl = DTR_CONTROL_DISABLE;
+	dcbSerialParams.fDsrSensitivity = FALSE;
+	dcbSerialParams.fTXContinueOnXoff = FALSE;
+	dcbSerialParams.fOutX = FALSE;
+	dcbSerialParams.fInX = FALSE;
+	dcbSerialParams.fErrorChar = FALSE;
+	dcbSerialParams.fNull = FALSE;
+	dcbSerialParams.fRtsControl = RTS_CONTROL_DISABLE;
+	dcbSerialParams.fAbortOnError = FALSE;
 
 	Status = SetCommState(hComm, &dcbSerialParams);  //Configuring the port according to settings in DCB
 
@@ -94,8 +107,8 @@ ErrorID_t ClientUART::open()
 	printf("    Setting DCB Structure Successfull\r\n\r\n");
 	printf("       Baudrate = %ld\r\n", dcbSerialParams.BaudRate);
 	printf("       ByteSize = %d\r\n", dcbSerialParams.ByteSize);
-	printf("       StopBits = %d\r\n", dcbSerialParams.StopBits);
-	printf("       Parity   = %d\r\n", dcbSerialParams.Parity);
+	printf("       StopBits = %s\r\n", dcbSerialParams.StopBits == 0?"1bit":"1.5or2bits");
+	printf("       Parity   = %s(%d)\r\n", dcbSerialParams.Parity == 0?"No":"Even/ODD", dcbSerialParams.Parity);
 
 	/*------------------------------------ Setting Timeouts --------------------------------------------------*/
 	COMMTIMEOUTS timeouts = { 0 };
