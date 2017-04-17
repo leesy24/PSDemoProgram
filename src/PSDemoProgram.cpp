@@ -172,21 +172,21 @@ testSCANPR(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTermin
 /**
  */
 void
-testSCN2(IDataStream& theDataStream, FILE* theTerminalLogFile)
+testSCN2(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTerminalLogFile)
 {
     Scan2Sequence lScanSequence(theDataStream);
     lScanSequence.setTerminalLogFile(theTerminalLogFile);
-    lScanSequence.run();
+    lScanSequence.run(theDataLogFileName);
 }
 
 /**
  */
 void
-testSCN2PR(IDataStream& theDataStream, FILE* theTerminalLogFile)
+testSCN2PR(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTerminalLogFile)
 {
     Scan2Print lScan2Print(theDataStream);
     lScan2Print.setTerminalLogFile(theTerminalLogFile);
-    lScan2Print.run();
+    lScan2Print.run(theDataLogFileName);
 }
 
 bool g_flag_GSC2 = false;
@@ -643,6 +643,7 @@ main(int argc, char **argv)
 			}
 
 			printf("UART port: %s\r\n\n", lUARTName);
+			printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 			// configure the UART
 			lClientUART.config(lUARTName, 10, 0/*lDataLogFile*/);
@@ -703,14 +704,14 @@ main(int argc, char **argv)
 	            case 6:
 	    	        if (!strcmp(argv[1], "UART"))
 	    	        {
-	    	        	testSCN2(*lpDataSteam, lTerminalLogFile);
+	    	        	testSCN2(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	    	        }
 	                break;
 
 	            case 7:
 	    	        if (!strcmp(argv[1], "UART"))
 	    	        {
-	    	        	testSCN2PR(*lpDataSteam, lTerminalLogFile);
+	    	        	testSCN2PR(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	    	        }
 	                break;
 

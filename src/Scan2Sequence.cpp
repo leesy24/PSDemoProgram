@@ -256,7 +256,7 @@ Scan2Sequence::processScan()
  * Let the scan process run.
  */
 ErrorID_t
-Scan2Sequence::run()
+Scan2Sequence::run(char* theDataLogFileName)
 {
     ErrorID_t result = ERR_SUCCESS;
 
@@ -286,7 +286,7 @@ Scan2Sequence::run()
             // request a scan, measure how long this takes on this machine.
             mNumberOfScans++;
             mComputerSendTimeCode = getMilliseconds();
-            result = mGSC2Command.performCommand(0, 1, mScan);
+            result = mGSC2Command.performCommand(0, 1, mScan, theDataLogFileName);
             mComputerReceiveTimeCode = getMilliseconds();
 
             // process the scan data and show result

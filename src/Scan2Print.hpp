@@ -242,7 +242,7 @@ class Scan2Print
          *      ERR_SUCCESS on success, otherwise a negative error code.
          */
         ErrorID_t
-        run();
+        run(char* theDataLogFileName);
 
         /**
          * Defines a text file to log the terminal output.

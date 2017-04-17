@@ -165,7 +165,7 @@ GSC2Command::parseScan(Scan_t& theScan)
  * Performs the GSCN command.
  */
 ErrorID_t
-GSC2Command::performCommand(int32_t theScanNumber, int32_t theAvgNumber, Scan_t &theScan)
+GSC2Command::performCommand(int32_t theScanNumber, int32_t theAvgNumber, Scan_t &theScan, char* theDataLogFileName)
 {
     ErrorID_t result = ERR_SUCCESS;
 
@@ -185,6 +185,13 @@ GSC2Command::performCommand(int32_t theScanNumber, int32_t theAvgNumber, Scan_t 
     // convert to host byte order and copy
     if (ERR_SUCCESS == result)
     {
+        FILE* lDataLogFile = 0;
+        lDataLogFile = fopen(theDataLogFileName, "wb");
+        if (lDataLogFile)
+        {
+        	fwrite(mBuffer, mBytesReceived, 1, lDataLogFile);
+        	fclose(lDataLogFile);
+        }
         convertNetworkToHost(mBuffer, mBytesReceived);
         result = parseScan(theScan);
     }

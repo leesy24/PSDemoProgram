@@ -280,7 +280,7 @@ Scan2Print::processScan()
  * Let the scan process run.
  */
 ErrorID_t
-Scan2Print::run()
+Scan2Print::run(char* theDataLogFileName)
 {
     ErrorID_t result = ERR_SUCCESS;
 
@@ -318,7 +318,7 @@ Scan2Print::run()
             // request a scan, measure how long this takes on this machine.
             mNumberOfScans++;
             mComputerSendTimeCode = getMilliseconds();
-            result = mGSC2Command.performCommand(0, mAvgNumber, mScan);
+            result = mGSC2Command.performCommand(0, mAvgNumber, mScan, theDataLogFileName);
             mComputerReceiveTimeCode = getMilliseconds();
 
             // process the scan data and show result

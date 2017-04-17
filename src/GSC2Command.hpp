@@ -164,7 +164,7 @@ class GSC2Command : private CommandBase
          *      ERR_SUCCESS on success, otherwise a negative error code.
          */
         ErrorID_t
-        performCommand(int32_t theScanNumber, int32_t theAvgNumber, Scan_t& theScan);
+        performCommand(int32_t theScanNumber, int32_t theAvgNumber, Scan_t& theScan, char* theDataLogFileName);
 };
 
 #endif /* GSC2COMMAND_HPP_ */
