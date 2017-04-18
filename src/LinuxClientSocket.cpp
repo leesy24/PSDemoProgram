@@ -92,21 +92,11 @@ ClientSocket::close()
 ErrorID_t
 ClientSocket::setClientIPAddress(const char* theClientAddress, int32_t thePort)
 {
-    // find host
-    struct hostent* hostInfo = gethostbyname(theClientAddress);
-    if (NULL == hostInfo)
-    {
-    	perror("gethostbyname failed");
-        fprintf(stderr, "Socket error: Unknown host.\r\n");
-        return ERR_INVALID_HANDLE;
-    }
-
     // setup the clients's socket address
     memset(&mClientIPAddress, 0, sizeof(mClientIPAddress));
     mClientIPAddress.sin_family = AF_INET;
-    memcpy((char *) &mClientIPAddress.sin_addr, hostInfo->h_addr, hostInfo->h_length);
     mClientIPAddress.sin_port = htons(thePort);
-
+    mClientIPAddress.sin_addr.s_addr = htonl(INADDR_ANY);
     return ERR_SUCCESS;
 }
 

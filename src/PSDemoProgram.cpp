@@ -200,7 +200,7 @@ int32_t g_GSC2_PointAvgNumber = 1;
 char g_GSC2_GSCN_rcvd_data[10][DATA_BUF_SIZE_MAX];
 
 void
-convertRELAY_UART_NET_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
+convertRELAY_Client_Sensor_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
 {
     CRC32 lCRC;
     cast_ptr_t lBufferPtr = { data }; // casts the buffer to an array of integer
@@ -238,17 +238,17 @@ convertRELAY_UART_NET_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
 }
 
 void
-convertRELAY_UART_NET(char *data, int32_t len, int32_t *plen)
+convertRELAY_Client_Sensor(char *data, int32_t len, int32_t *plen)
 {
     g_GSC2_flag = false;
 	if (!strncmp(data, "GSC2", 4))
 	{
-		convertRELAY_UART_NET_GSC2_GSCN(data, len, plen);
+		convertRELAY_Client_Sensor_GSC2_GSCN(data, len, plen);
 	}
 }
 
 void
-convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
+convertRELAY_Sensor_Client_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 {
 	// set moving integer pointer; skip command ID and length
 	cast_ptr_t lDataPtr = { data };
@@ -361,11 +361,11 @@ convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 			} // end lNumberOfEchoes
 
 			int32_t* lSaveIntegerPtr;
-        	int32_t lDistanceCnt = 0;
-        	int32_t lNoEchoCnt = 0;
-        	int32_t lNoiseCnt = 0;
-        	int64_t lDistanceSum = 0;
-        	int64_t lPulseWidthSum = 0;
+			int32_t lDistanceCnt = 0;
+			int32_t lNoEchoCnt = 0;
+			int32_t lNoiseCnt = 0;
+			int64_t lDistanceSum = 0;
+			int64_t lPulseWidthSum = 0;
 			int32_t lDistance = 0;
 			int32_t lPulseWidth = 0;
 
@@ -416,8 +416,8 @@ convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 					*lRcvIntegerPtr = htonl(0x7fffffff); // Set Noise
 			}
 #if 0
-		    printf("lPoints = %d,", lPoints);
-		    printf("lDistanceCnt = %d,", lDistanceCnt);
+			printf("lPoints = %d,", lPoints);
+			printf("lDistanceCnt = %d,", lDistanceCnt);
 			printf("lNoEchoCnt = %d,", lNoEchoCnt);
 			printf("lNoiseCnt = %d,", lNoiseCnt);
 			printf("*lRcvIntegerPtr = 0x%x\r\n", ntohl()*lRcvIntegerPtr));
@@ -427,7 +427,6 @@ convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 			if (lDataContent != 4)
 			{
 				*lRcvIntegerPtr = htonl(int32_t(lPulseWidthSum / g_GSC2_ScanAvgNumber));
-				lPulseWidth = ntohl(*lSaveIntegerPtr++);
 				lRcvIntegerPtr++;
 			}
 		} // end lNumberOfPoints
@@ -451,7 +450,7 @@ convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 }
 
 void
-convertRELAY_NET_UART_GSCN_GSC2_PointAvg(char *data, int32_t len, int32_t *plen)
+convertRELAY_Sensor_Client_GSCN_GSC2_PointAvg(char *data, int32_t len, int32_t *plen)
 {
 	// set moving integer pointer; skip command ID and length
 	cast_ptr_t lDataPtr = { data };
@@ -671,7 +670,7 @@ convertRELAY_NET_UART_GSCN_GSC2_PointAvg(char *data, int32_t len, int32_t *plen)
 }
 
 bool
-convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
+convertRELAY_Sensor_Client_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
 {
     CRC32 lCRC;
 	int32_t lLength = ntohl(*(int32_t *)(data + 4));
@@ -697,19 +696,19 @@ convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
     	return false;
     }
 
-    convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(data, len, plen);
+    convertRELAY_Sensor_Client_GSCN_GSC2_ScanAvg(data, len, plen);
 
-    convertRELAY_NET_UART_GSCN_GSC2_PointAvg(data, len, plen);
+    convertRELAY_Sensor_Client_GSCN_GSC2_PointAvg(data, len, plen);
 
     return true;
 }
 
 bool
-convertRELAY_NET_UART(char *data, int32_t len, int32_t *plen)
+convertRELAY_Sensor_Client(char *data, int32_t len, int32_t *plen)
 {
 	if (g_GSC2_flag && !strncmp(data, "GSCN", 4))
 	{
-		if (convertRELAY_NET_UART_GSCN_GSC2(data, len, plen) == false)
+		if (convertRELAY_Sensor_Client_GSCN_GSC2(data, len, plen) == false)
 		{
 			memcpy(data, g_GSC2_GSCN_send_data, g_GSC2_GSCN_send_data_len);
 			*plen = g_GSC2_GSCN_send_data_len;
@@ -724,10 +723,12 @@ char g_RELAY_read_data[DATA_BUF_SIZE_MAX];
 /**
  */
 void
-testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile)
+testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* theTerminalLogFile)
 {
 	int32_t read_len;
 	int c = 0;
+
+	printf("RELAY UART-NET mode started!\r\n");
 
     // terminal mode change on linux for kbhit of isTerminated().
     changemode(1);
@@ -737,21 +738,68 @@ testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile
 		// if new data is available on the serial port, print it out
 		if ((read_len = theUART.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-			convertRELAY_UART_NET(g_RELAY_read_data, read_len, &read_len);
-			theSocket.write(g_RELAY_read_data, read_len);
+		    //printf("Client read_len=%d\r\n", read_len);
+			convertRELAY_Client_Sensor(g_RELAY_read_data, read_len, &read_len);
+			theSensorSocket.write(g_RELAY_read_data, read_len);
 		}
+	    //printf("Client read_len=%d\r\n", read_len);
 		// if new data is available on the console, send it to the serial port
-		if ((read_len = theSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
+		if ((read_len = theSensorSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-			if (convertRELAY_NET_UART(g_RELAY_read_data, read_len, &read_len))
+		    //printf("Sensor read_len=%d\r\n", read_len);
+			if (convertRELAY_Sensor_Client(g_RELAY_read_data, read_len, &read_len))
 			{
 				theUART.write(g_RELAY_read_data, read_len);
 			}
 			else
 			{
-				theSocket.write(g_RELAY_read_data, read_len);
+				theSensorSocket.write(g_RELAY_read_data, read_len);
 			}
 		}
+	    //printf("Sensor read_len=%d\r\n", read_len);
+	} while((kbhit() == 0) || (((c = getch()) != 'q') && (c != 'Q') && (c != 27/*VK_ESC*/)));
+
+    // terminal mode restore on linux for kbhit of isTerminated().
+    changemode(0);
+}
+
+/**
+ */
+void
+testRELAY_NET_NET(IDataStream& theClientSocket, IDataStream& theSensorSocket, FILE* theTerminalLogFile)
+{
+	int32_t read_len;
+	int c = 0;
+
+	printf("RELAY NET-NET mode started!\r\n");
+
+    // terminal mode change on linux for kbhit of isTerminated().
+    changemode(1);
+
+    do
+	{
+		// if new data is available on the serial port, print it out
+		if ((read_len = theClientSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
+		{
+		    //printf("Client read_len=%d\r\n", read_len);
+			convertRELAY_Client_Sensor(g_RELAY_read_data, read_len, &read_len);
+			theSensorSocket.write(g_RELAY_read_data, read_len);
+		}
+	    //printf("Client read_len=%d\r\n", read_len);
+		// if new data is available on the console, send it to the serial port
+		if ((read_len = theSensorSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
+		{
+		    //printf("Sensor read_len=%d\r\n", read_len);
+			if (convertRELAY_Sensor_Client(g_RELAY_read_data, read_len, &read_len))
+			{
+				theClientSocket.write(g_RELAY_read_data, read_len);
+			}
+			else
+			{
+				theSensorSocket.write(g_RELAY_read_data, read_len);
+			}
+		}
+	    //printf("Sensor read_len=%d\r\n", read_len);
 	} while((kbhit() == 0) || (((c = getch()) != 'q') && (c != 'Q') && (c != 27/*VK_ESC*/)));
 
     // terminal mode restore on linux for kbhit of isTerminated().
@@ -764,21 +812,23 @@ testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile
 int
 main(int argc, char **argv)
 {
-    ClientSocket lClientSocket;
-    ClientUART lClientUART;
     IDataStream *lpDataSteam;
     bool done = false;
-    int32_t lClientPort = 1025;
     int32_t lSelection = 0;
-    int32_t lServerPort = 1024;
-    string32_t lClientName = { "10.0.10.0" }; // you may enter here your default client IP, e.g. "10.0.3.12"
-    string32_t lServerName = { "10.0.8.86" }; // default sensor IP
+    int32_t lClientPort = 1025;
+    string32_t lClientIP = { "10.0.10.1" }; // default client IP
+    ClientSocket lClientSocket;
+    int32_t lMyPort = 1025;
+    int32_t lSensorPort = 1024;
+    string32_t lSensorIP = { "10.0.8.86" }; // default sensor IP
+    ClientSocket lSensorSocket;
+    ClientUART lClientUART;
     string32_t lDataLogFileName = { 0 };
     string32_t lTerminalLogFileName = { 0 };
 #if __WIN32__
-    string32_t lUARTName = { "COM4" }; // you may enter here your default client UART port.
+    string32_t lUARTName = { "COM4" }; // you may enter here your default my UART port.
 #else // if __linux__
-    string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default client UART port.
+    string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default my UART port.
 #endif
     //FILE* lDataLogFile = 0;
     FILE* lTerminalLogFile = 0;
@@ -794,29 +844,35 @@ main(int argc, char **argv)
     printf("%s\r\n", getVersionString());
 
     // parse command line: help
-    if (argc < 2 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART") && strcmp(argv[1], "RELAY")))
+    if (argc < 2 || (strcmp(argv[1], "NET") && strcmp(argv[1], "UART") && strcmp(argv[1], "RELAY_N") && strcmp(argv[1], "RELAY_U")))
     {
 		puts(	"Usage: PSDemoProgram \r\n"
 				"   NET\r\n"
-				"   [sensor_ip_address] [sensor_port]\r\n"
-				"   [client_ip_address] [client_port]\r\n"
+				"   [sensor_ip_address] [sensor_port] [my_port]\r\n"
 				"   [data log file] [terminal log file]\r\n"
-				"   -or-\r\n"
+				"    -or-\r\n"
 				"   UART\r\n"
 				"   [UART_port]\r\n"
 				"   [data log file] [terminal log file]\r\n"
-				"   -or-\r\n"
-				"   RELAY\r\n"
+				"    -or-\r\n"
+				"   RELAY_N\r\n"
+				"   [client_ip_address] [client_port]\r\n"
+				"   [sensor_ip_address] [sensor_port] [my_port]\r\n"
+				"   [data log file] [terminal log file]\r\n"
+				"    -or-\r\n"
+				"   RELAY_U\r\n"
 				"   [UART_port]\r\n"
-				"   [sensor_ip_address] [sensor_port]\r\n"
+				"   [sensor_ip_address] [sensor_port] [my_port]\r\n"
 				"   [data log file] [terminal log file]\r\n\n");
 		printf(	"Example:\r\n");
-		printf(	"   PSDemoProgram NET 10.0.3.12 1024 10.0.10.0 1025 scans.dat term.txt\r\n"
-				"   -or- PSDemoProgram NET 10.0.3.12\r\n");
+		printf(	"   PSDemoProgram NET 10.0.3.12 1024 1025 scans.dat term.txt\r\n"
+				"    -or- PSDemoProgram NET 10.0.3.12\r\n");
 		printf(	"   PSDemoProgram UART %s terminal.txt scans.dat\r\n", lUARTName);
-		printf(	"   -or- PSDemoProgram UART %s\r\n", lUARTName);
-		printf(	"   PSDemoProgram RELAY %s 10.0.3.12 1024 10.0.10.0 1025 scans.dat term.txt\r\n", lUARTName);
-		printf(	"   -or- PSDemoProgram RELAY %s 10.0.3.12 scans.dat terminal.txt\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram UART %s\r\n", lUARTName);
+		printf(	"   PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12 1024 1025 scans.dat term.txt\r\n");
+		printf(	"    -or- PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12\r\n");
+		printf(	"   PSDemoProgram RELAY_U %s 10.0.3.12 1024 1025 scans.dat term.txt\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram RELAY_U %s 10.0.3.12\r\n", lUARTName);
 		return -1;
 	}
 
@@ -827,54 +883,48 @@ main(int argc, char **argv)
 			// get sensor IP and port from the command line
 			if (3 <= argc)
 			{
-				strcpy(lServerName, argv[2]);
+				strcpy(lSensorIP, argv[2]);
 			}
 			if (4 <= argc)
 			{
-				lServerPort = atoi(argv[3]);
+				lSensorPort = atoi(argv[3]);
 			}
 
-			// get sensor and local IP from the command line
+			// get my port from the command line
 			if (5 <= argc)
 			{
-				strcpy(lClientName, argv[4]);
+				lMyPort = atoi(argv[4]);
 			}
-			if (6 <= argc)
-			{
-				lClientPort = atoi(argv[5]);
-			}
+			printf("Sensor IP: %s:%d\r\nMy Port: %d\r\n\n", lSensorIP, lSensorPort, lMyPort);
 
 			// open the log files
-			if (7 <= argc)
+			if (6 <= argc)
 			{
-				strcpy(lDataLogFileName, argv[6]);
+				strcpy(lDataLogFileName, argv[5]);
 				//lDataLogFile = fopen(lDataLogFileName, "wb");
 			}
-			if (8 <= argc)
+			if (7 <= argc)
 			{
-				strcpy(lTerminalLogFileName, argv[7]);
+				strcpy(lTerminalLogFileName, argv[6]);
 				lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
 			}
-
-			printf("Sensor IP: %s:%d\r\nLocal IP: %s:%d\r\n\n", lServerName,
-					lServerPort, lClientName, lClientPort);
 			printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 			// create the socket
-			lClientSocket.setClientIPAddress(lClientName, lClientPort);
-			lClientSocket.setServerIPAddress(lServerName, lServerPort);
-			//lClientSocket.setDataLogFile(lDataLogFile);
-			lClientSocket.setTimeout(10);
+			lSensorSocket.setClientIPAddress(0, lMyPort);
+			lSensorSocket.setServerIPAddress(lSensorIP, lSensorPort);
+			//lSensorSocket.setDataLogFile(lDataLogFile);
+			lSensorSocket.setTimeout(10);
 
 			// open the socket
-			if (ERR_SUCCESS != lClientSocket.open())
+			if (ERR_SUCCESS != lSensorSocket.open())
 			{
 				//if (lDataLogFile) fclose(lDataLogFile);
 				if (lTerminalLogFile) fclose(lTerminalLogFile);
 				fprintf(stderr, "Error: Cannot open sensor connection!\r\n");
 				return ERR_IO;
 			}
-			lpDataSteam = &lClientSocket;
+			lpDataSteam = &lSensorSocket;
 		}
 		else // if (!strcmp(argv[1], "UART"))
 		{
@@ -883,6 +933,7 @@ main(int argc, char **argv)
 			{
 				strcpy(lUARTName, argv[2]);
 			}
+			printf("UART port: %s\r\n\n", lUARTName);
 
 			// open the log files
 			if (argc >= 4)
@@ -895,8 +946,6 @@ main(int argc, char **argv)
 				strcpy(lTerminalLogFileName, argv[4]);
 				lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
 			}
-
-			printf("UART port: %s\r\n\n", lUARTName);
 			printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 			// configure the UART
@@ -921,12 +970,9 @@ main(int argc, char **argv)
 	                " 2 - GPRM: Getting a sensor parameter\r\n"
 	                " 3 - SPRM: Setting a sensor parameter\r\n"
 	                " 4 - SCAN: Starting a scan sequence\r\n"
-	                " 5 - SCANPR: Getting a scan data and print graph\r\n");
-	        if (!strcmp(argv[1], "UART"))
-	        {
-	        printf( " 6 - SCN2: Starting a scan2 sequence\r\n"
+	                " 5 - SCANPR: Getting a scan data and print graph\r\n"
+	                " 6 - SCN2: Starting a scan2 sequence\r\n"
 	                " 7 - SCN2PR: Getting a scan2 data and print graph\r\n");
-	        }
 	        printf( " 0 - Exit\r\n> ");
 	        lSelection = -1;
 	        fscanf(stdin, "%d", &lSelection);
@@ -956,17 +1002,11 @@ main(int argc, char **argv)
 	                break;
 
 	            case 6:
-	    	        if (!strcmp(argv[1], "UART"))
-	    	        {
-	    	        	testSCN2(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
-	    	        }
+    	        	testSCN2(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	                break;
 
 	            case 7:
-	    	        if (!strcmp(argv[1], "UART"))
-	    	        {
-	    	        	testSCN2PR(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
-	    	        }
+    	        	testSCN2PR(*lpDataSteam, lDataLogFileName, lTerminalLogFile);
 	                break;
 
 	            case 0:
@@ -979,35 +1019,35 @@ main(int argc, char **argv)
 	        }
 	    }
     }
-    else //if (!strcmp(argv[1], "RELAY"))
+    else if (!strcmp(argv[1], "RELAY_N"))
     {
-		// get UART port from the command line
-		if (argc >= 3)
+		// get client IP and port from the command line
+		if (3 <= argc)
 		{
-			strcpy(lUARTName, argv[2]);
+			strcpy(lClientIP, argv[2]);
 		}
-
-		printf("UART port: %s\r\n\n", lUARTName);
-
-		// get sensor IP and port from the command line
 		if (4 <= argc)
 		{
-			strcpy(lServerName, argv[3]);
+			lClientPort = atoi(argv[3]);
 		}
+		printf("Client IP: %s:%d\r\n\n", lClientIP, lClientPort);
+
+		// get sensor IP and port from the command line
 		if (5 <= argc)
 		{
-			lServerPort = atoi(argv[4]);
+			strcpy(lSensorIP, argv[4]);
 		}
-
-		// get sensor and local IP from the command line
 		if (6 <= argc)
 		{
-			strcpy(lClientName, argv[5]);
+			lSensorPort = atoi(argv[5]);
 		}
+
+		// get local Port from the command line
 		if (7 <= argc)
 		{
-			lClientPort = atoi(argv[6]);
+			lMyPort = atoi(argv[6]);
 		}
+		printf("Sensor IP: %s:%d and My port: %d\r\n\n", lSensorIP, lSensorPort, lMyPort);
 
 		// open the log files
 		if (8 <= argc)
@@ -1020,8 +1060,77 @@ main(int argc, char **argv)
 			strcpy(lTerminalLogFileName, argv[8]);
 			lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
 		}
+		printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
-		printf("Sensor IP: %s:%d and Local IP: %s:%d\r\n\n", lServerName, lServerPort, lClientName, lClientPort);
+		// create the client socket
+		lClientSocket.setClientIPAddress(0, lSensorPort);
+		lClientSocket.setServerIPAddress(lClientIP, lClientPort);
+		//lClientSocket.setDataLogFile(lDataLogFile);
+		lClientSocket.setTimeout(0);
+		// open the client socket
+		if (ERR_SUCCESS != lClientSocket.open())
+		{
+			//if (lDataLogFile) fclose(lDataLogFile);
+			if (lTerminalLogFile) fclose(lTerminalLogFile);
+			fprintf(stderr, "Error: Cannot open client IP connection!\r\n");
+			return ERR_IO;
+		}
+
+		// create the sensor socket
+		lSensorSocket.setClientIPAddress(0, lMyPort);
+		lSensorSocket.setServerIPAddress(lSensorIP, lSensorPort);
+		//lSensorSocket.setDataLogFile(lDataLogFile);
+		lSensorSocket.setTimeout(0);
+		// open the sensor socket
+		if (ERR_SUCCESS != lSensorSocket.open())
+		{
+	        if (lSensorSocket.isOpen())	lSensorSocket.close();
+			//if (lDataLogFile) fclose(lDataLogFile);
+			if (lTerminalLogFile) fclose(lTerminalLogFile);
+			fprintf(stderr, "Error: Cannot open sensor IP connection!\r\n");
+			return ERR_IO;
+		}
+
+        testRELAY_NET_NET(lClientSocket, lSensorSocket, lTerminalLogFile);
+
+    }
+    else //if (!strcmp(argv[1], "RELAY_U"))
+    {
+		// get UART port from the command line
+		if (argc >= 3)
+		{
+			strcpy(lUARTName, argv[2]);
+		}
+		printf("UART port: %s\r\n\n", lUARTName);
+
+		// get sensor IP and port from the command line
+		if (4 <= argc)
+		{
+			strcpy(lSensorIP, argv[3]);
+		}
+		if (5 <= argc)
+		{
+			lSensorPort = atoi(argv[4]);
+		}
+		// get local Port from the command line
+		if (6 <= argc)
+		{
+			lMyPort = atoi(argv[5]);
+		}
+		printf("Sensor IP: %s:%d and My Port: %d\r\n\n", lSensorIP, lSensorPort, lMyPort);
+
+		// open the log files
+		if (7 <= argc)
+		{
+			strcpy(lDataLogFileName, argv[6]);
+			//lDataLogFile = fopen(lDataLogFileName, "wb");
+		}
+		if (8 <= argc)
+		{
+			strcpy(lTerminalLogFileName, argv[7]);
+			lTerminalLogFile = fopen(lTerminalLogFileName, "ab");
+		}
+		printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 		// configure the UART
 		lClientUART.config(lUARTName, 0, 0/*lDataLogFile*/);
@@ -1036,30 +1145,37 @@ main(int argc, char **argv)
 		}
 
 		// create the socket
-		lClientSocket.setClientIPAddress(lClientName, lClientPort);
-		lClientSocket.setServerIPAddress(lServerName, lServerPort);
-		//lClientSocket.setDataLogFile(lDataLogFile);
-		lClientSocket.setTimeout(0);
-
+		lSensorSocket.setClientIPAddress(0, lMyPort);
+		lSensorSocket.setServerIPAddress(lSensorIP, lSensorPort);
+		//lSensorSocket.setDataLogFile(lDataLogFile);
+		lSensorSocket.setTimeout(0);
 		// open the socket
-		if (ERR_SUCCESS != lClientSocket.open())
+		if (ERR_SUCCESS != lSensorSocket.open())
 		{
+		    // close the UART
+		    if (lClientUART.isOpen()) lClientUART.close();
 			//if (lDataLogFile) fclose(lDataLogFile);
 			if (lTerminalLogFile) fclose(lTerminalLogFile);
 			fprintf(stderr, "Error: Cannot open sensor IP connection!\r\n");
 			return ERR_IO;
 		}
 
-        testRELAY(lClientUART, lClientSocket, lTerminalLogFile);
+        testRELAY_UART_NET(lClientUART, lSensorSocket, lTerminalLogFile);
+
     }
 
-    // close the socket
-    if(lClientSocket.isOpen())
+    // close the sensor socket
+    if (lSensorSocket.isOpen())
+    {
+    	lSensorSocket.close();
+    }
+    // close the client socket
+    if (lClientSocket.isOpen())
     {
     	lClientSocket.close();
     }
     // close the UART
-    if(lClientUART.isOpen())
+    if (lClientUART.isOpen())
     {
     	lClientUART.close();
     }
