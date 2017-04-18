@@ -104,8 +104,8 @@ class GSC2Command : private CommandBase
         {
                 char mCommandID[4];
                 int32_t mLength;
-                int32_t mScanNumber;
-                int32_t mAvgNumber;
+                int32_t mScanAvgNumber;
+                int32_t mPointAvgNumber;
                 int32_t mCRC;
         } mCommand;
 

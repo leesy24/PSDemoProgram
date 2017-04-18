@@ -114,6 +114,9 @@ class Scan2Sequence
         /** the terminal log file */
         FILE* mTerminalLogFile;
 
+        /** number of the scan average count */
+        int32_t mScanAvgNumber;
+
         /**
          * Returns the current system time in ms.
          * Watch out for timer overflows.

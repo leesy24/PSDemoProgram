@@ -289,12 +289,20 @@ Scan2Print::run(char* theDataLogFileName)
     mScannerTimeCode = 0;
     mNumberOfScans = 0;
 
-    // ask average value
-    fprintf(stdout, "> Average count : ");
-    fscanf(stdin, "%d", &mAvgNumber);
-    if (mAvgNumber <= 0)
+    // ask scan average value
+    fprintf(stdout, "> Scan Average count : ");
+    fscanf(stdin, "%d", &mScanAvgNumber);
+    if (mScanAvgNumber <= 0)
     {
-    	mAvgNumber = 1;
+    	mScanAvgNumber = 1;
+    }
+
+    // ask point average value
+    fprintf(stdout, "> Point Average count : ");
+    fscanf(stdin, "%d", &mPointAvgNumber);
+    if (mPointAvgNumber <= 0)
+    {
+    	mPointAvgNumber = 1;
     }
 
     // ask for the terminating condition
@@ -318,7 +326,7 @@ Scan2Print::run(char* theDataLogFileName)
             // request a scan, measure how long this takes on this machine.
             mNumberOfScans++;
             mComputerSendTimeCode = getMilliseconds();
-            result = mGSC2Command.performCommand(0, mAvgNumber, mScan, theDataLogFileName);
+            result = mGSC2Command.performCommand(mScanAvgNumber, mPointAvgNumber, mScan, theDataLogFileName);
             mComputerReceiveTimeCode = getMilliseconds();
 
             // process the scan data and show result

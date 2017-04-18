@@ -51,6 +51,8 @@
 #include "SPRMCommand.hpp"
 #include "KbhitGetch.h"
 
+#define DATA_BUF_SIZE_MAX (8*1024)
+
 /**
  * Shows how to read the firmware version.
  * It is recommended to start any communication with this command.
@@ -189,8 +191,13 @@ testSCN2PR(IDataStream& theDataStream, char* theDataLogFileName, FILE* theTermin
     lScan2Print.run(theDataLogFileName);
 }
 
-bool g_flag_GSC2 = false;
-int32_t param_GSC2_AvgNumber = 1;
+bool g_GSC2_flag = false;
+char g_GSC2_GSCN_send_data[4*4]; // func + length + data + crc
+int32_t g_GSC2_GSCN_send_data_len;
+int32_t g_GSC2_ScanAvgNumber = 1;
+int32_t g_GSC2_ScanAvgNumber_cnt;
+int32_t g_GSC2_PointAvgNumber = 1;
+char g_GSC2_GSCN_rcvd_data[10][DATA_BUF_SIZE_MAX];
 
 void
 convertRELAY_UART_NET_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
@@ -199,8 +206,6 @@ convertRELAY_UART_NET_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
     cast_ptr_t lBufferPtr = { data }; // casts the buffer to an array of integer
     int32_t lCRCPosition = (4 + 4 + 4 + 4) / sizeof(int32_t) - 1; // position of the CRC in the buffer
     uint32_t lCRCValue;
-    int32_t lScanNumber;
-    int32_t lAvgNumber;
 
 #if 0
     int32_t lLength;
@@ -208,26 +213,34 @@ convertRELAY_UART_NET_GSC2_GSCN(char *data, int32_t len, int32_t *plen)
     lLength = ntohl(lBufferPtr.asIntegerPtr[1]);
     printf("GSC2: Length = %d\r\n", lLength);
 #endif
-    lScanNumber = ntohl(lBufferPtr.asIntegerPtr[2]);
-    param_GSC2_AvgNumber = lAvgNumber = ntohl(lBufferPtr.asIntegerPtr[3]);
+    g_GSC2_ScanAvgNumber = ntohl(lBufferPtr.asIntegerPtr[2]);
+    if (g_GSC2_ScanAvgNumber < 1) g_GSC2_ScanAvgNumber = 1;
+    if (g_GSC2_ScanAvgNumber > 10) g_GSC2_ScanAvgNumber = 10;
+    g_GSC2_PointAvgNumber = ntohl(lBufferPtr.asIntegerPtr[3]);
+    if (g_GSC2_PointAvgNumber < 1) g_GSC2_PointAvgNumber = 1;
 #if 0
-    printf("GSC2: ScanNumber = %d\r\n", lScanNumber);
-    printf("GSC2: AvgNumber = %d\r\n", lAvgNumber);
+    printf("GSC2: ScanAvgNumber = %d\r\n", g_GSC2_ScanAvgNumber);
+    printf("GSC2: PointAvgNumber = %d\r\n", g_GSC2_PointAvgNumber);
 #endif
 	strncpy((char *)lBufferPtr.asIntegerPtr + 0, "GSCN", 4);
 	lBufferPtr.asIntegerPtr[1] = htonl(4); // Length
-	lBufferPtr.asIntegerPtr[2] = htonl(lScanNumber); // Scan Number
+	lBufferPtr.asIntegerPtr[2] = htonl(0); // Always, Scan Number is 0 for latest scan measured.
 	lCRCValue = lCRC.get(lBufferPtr.asIntegerPtr + 0, (4 + 4 + 4 + 4) - 4);
     lBufferPtr.asIntegerPtr[lCRCPosition] = htonl(lCRCValue);
     *plen = (4 + 4 + 4 + 4);
-    if (lAvgNumber > 1)
-    	g_flag_GSC2 = true;
+    if (g_GSC2_PointAvgNumber > 1 || g_GSC2_ScanAvgNumber > 1)
+    {
+    	g_GSC2_flag = true;
+    	g_GSC2_ScanAvgNumber_cnt = 0;
+    	memcpy(g_GSC2_GSCN_send_data, data, *plen);
+    	g_GSC2_GSCN_send_data_len = *plen;
+    }
 }
 
 void
 convertRELAY_UART_NET(char *data, int32_t len, int32_t *plen)
 {
-    g_flag_GSC2 = false;
+    g_GSC2_flag = false;
 	if (!strncmp(data, "GSC2", 4))
 	{
 		convertRELAY_UART_NET_GSC2_GSCN(data, len, plen);
@@ -235,26 +248,214 @@ convertRELAY_UART_NET(char *data, int32_t len, int32_t *plen)
 }
 
 void
-convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
+convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(char *data, int32_t len, int32_t *plen)
 {
-    CRC32 lCRC;
-    // type safe cast. CRC in network byte order is expected in the last 4 bytes of the buffer
-    cast_ptr_t lCRCReceivedPtr = { data + (len - 4) };
-    uint32_t lCRCExpected = ntohl(*lCRCReceivedPtr.asIntegerPtr);
-    uint32_t lCRCReceived = lCRC.get(data, len - 4);
-
-#if 0
-    printf("GSC2: CRC expected:0x%x, received:0x%x\n", lCRCExpected, lCRCReceived);
-#endif
-    if (lCRCExpected != lCRCReceived)
-    {
-    	return;
-    }
-
 	// set moving integer pointer; skip command ID and length
 	cast_ptr_t lDataPtr = { data };
 	int32_t* lRcvIntegerPtr = &lDataPtr.asIntegerPtr[1];
+	// take length of parameter block
+	int32_t lNumberOfParameter;
+	int32_t lNumberOfParameterExpected;
+	int32_t lNumberOfEchoes = 0;
+	int32_t lDataContent = 0;
+	int32_t lNumberOfPoints = 0;
 	int32_t lLength;
+
+	lLength = ntohl(*lRcvIntegerPtr++);
+#if 0
+	printf("Length = %d\r\n", lLength);
+#endif
+
+	lNumberOfParameter = ntohl(*lRcvIntegerPtr++);
+	// check compatibility of firmware and control program
+	if (lNumberOfParameter > 10 /*NUMBER_OF_SCAN_PARAMETER*/)
+	{
+		lNumberOfParameterExpected = 10 /*NUMBER_OF_SCAN_PARAMETER*/;
+	}
+	else
+	{
+		lNumberOfParameterExpected = lNumberOfParameter;
+	}
+#if 0
+	printf("Number of parameters = %d, %d\r\n", lNumberOfParameter, lNumberOfParameterExpected);
+#endif
+
+	// copy known parameter to scan
+	for (int32_t l = 0; l < lNumberOfParameterExpected; l++)
+	{
+#if 0
+		printf("parameter[%d] = %d(0x%x)\r\n", l, ntohl(*lRcvIntegerPtr), ntohl(*lRcvIntegerPtr));
+#endif
+		if (l == 0 /* PARAMETER_SCAN_NUMBER */)
+		{
+#if 0
+			int32_t* lSaveIntegerPtr;
+			int32_t lScanNumber = 0;
+			for(int i = 0; i < g_GSC2_ScanAvgNumber; i++)
+			{
+				lSaveIntegerPtr = (int32_t *)(g_GSC2_GSCN_rcvd_data[i] + ((char *)lRcvIntegerPtr - data));
+				lScanNumber = ntohl(*lSaveIntegerPtr);
+				printf("%d:lScanNumber=%d, ", i, lScanNumber);
+			}
+			printf("\r\n");
+#endif
+		}
+		if (l == 4 /* PARAMETER_NUMBER_OF_ECHOES */)
+		{
+			lNumberOfEchoes = ntohl(*lRcvIntegerPtr);
+		}
+		if (l == 8 /* PARAMETER_DATA_CONTENT */)
+		{
+			lDataContent = ntohl(*lRcvIntegerPtr);
+		}
+		lRcvIntegerPtr++;
+	}
+
+	// skip unkown parameter
+	for (int32_t l = lNumberOfParameterExpected; l < lNumberOfParameter; l++)
+	{
+#if 0
+		printf("parameter[%d] = %d(0x%x)\r\n", l, ntohl(*lRcvIntegerPtr), ntohl(*lRcvIntegerPtr));
+#endif
+		lRcvIntegerPtr++;
+	}
+
+	// get number of echoes. If 0, then the master echo is transfered instead of the number
+#if 0
+	printf("Data Content = %d\r\n", lDataContent);
+#endif
+
+#if 0
+	printf("Number of echoes = %d\r\n", lNumberOfEchoes);
+#endif
+	if (0 == lNumberOfEchoes)
+	{
+		lNumberOfEchoes = 1;
+	}
+
+	// take number of points, check limits
+	lNumberOfPoints = ntohl(*lRcvIntegerPtr++);
+#if 0
+	printf("Number of points = %d\r\n", lNumberOfPoints);
+#endif
+
+	if ((4 /* MAX_NUMBER_OF_ECHOS */ < lNumberOfEchoes) || (4000 /* MAX_POINTS_PER_SCAN */ < lNumberOfPoints))
+	{
+		return;
+	}
+
+	// copy data block according to the data content.
+	if (1 /* lDataContent == 4 */ /* DATABLOCK_WITH_DISTANCES */)
+	{
+
+    	for (int32_t lPoints = 0; lPoints < lNumberOfPoints; lPoints++)
+		{
+			// loop for each point through all echos
+			for (int32_t lEchos = 0; lEchos < lNumberOfEchoes - 1; lEchos++)
+			{
+				lRcvIntegerPtr++;
+				if (lDataContent != 4)
+				{
+					lRcvIntegerPtr++;
+				}
+			} // end lNumberOfEchoes
+
+			int32_t* lSaveIntegerPtr;
+        	int32_t lDistanceCnt = 0;
+        	int32_t lNoEchoCnt = 0;
+        	int32_t lNoiseCnt = 0;
+        	int64_t lDistanceSum = 0;
+        	int64_t lPulseWidthSum = 0;
+			int32_t lDistance = 0;
+			int32_t lPulseWidth = 0;
+
+#if 0
+		    printf("lPoints = %d,", lPoints);
+#endif
+			for(int i = 0; i < g_GSC2_ScanAvgNumber; i++)
+			{
+				lSaveIntegerPtr = (int32_t *)(g_GSC2_GSCN_rcvd_data[i] + ((char *)lRcvIntegerPtr - data));
+
+				lDistance = ntohl(*lSaveIntegerPtr++);
+				if ((uint32_t)lDistance == 0x80000000) // Check No Echo
+				{
+					lNoEchoCnt ++;
+				}
+				else if ((uint32_t)lDistance == 0x7FFFFFFF) // Check Noise
+				{
+					lNoiseCnt ++;
+				}
+				else
+				{
+					lDistanceSum += lDistance;
+					lDistanceCnt ++;
+				}
+
+				if (lDataContent != 4)
+				{
+					lPulseWidth = ntohl(*lSaveIntegerPtr++);
+				}
+				lPulseWidthSum += lPulseWidth;
+#if 0
+			    printf("0x%08x,", lPulseWidth);
+#endif
+			} // end g_GSC2_ScanAvgNumber
+#if 0
+			printf("\r\n");
+#endif
+
+			if (lDistanceCnt)
+			{
+				*lRcvIntegerPtr = htonl(int32_t(lDistanceSum / lDistanceCnt));
+			}
+			else
+			{
+				if (lNoEchoCnt > lNoiseCnt)
+					*lRcvIntegerPtr = htonl(0x80000000); // Set No Echo
+				else
+					*lRcvIntegerPtr = htonl(0x7fffffff); // Set Noise
+			}
+#if 0
+		    printf("lPoints = %d,", lPoints);
+		    printf("lDistanceCnt = %d,", lDistanceCnt);
+			printf("lNoEchoCnt = %d,", lNoEchoCnt);
+			printf("lNoiseCnt = %d,", lNoiseCnt);
+			printf("*lRcvIntegerPtr = 0x%x\r\n", ntohl()*lRcvIntegerPtr));
+#endif
+			lRcvIntegerPtr++;
+
+			if (lDataContent != 4)
+			{
+				*lRcvIntegerPtr = htonl(int32_t(lPulseWidthSum / g_GSC2_ScanAvgNumber));
+				lPulseWidth = ntohl(*lSaveIntegerPtr++);
+				lRcvIntegerPtr++;
+			}
+		} // end lNumberOfPoints
+	}
+
+    CRC32 lCRC;
+    int32_t lCRCPosition; // position of the CRC in the buffer
+    uint32_t lCRCValue;
+
+    lCRCPosition = (8 + lLength + 4) / sizeof(int32_t) - 1;
+	lCRCValue = lCRC.get(lDataPtr.asIntegerPtr + 0,  8 + lLength);
+	lDataPtr.asIntegerPtr[lCRCPosition] = htonl(lCRCValue);
+    *plen = 8 + lLength + 4;
+#if 0
+    printf("Send Length = %d\r\n", lLength);
+	printf("Send CRCPosition = %d\r\n", lCRCPosition);
+	printf("Send CRCValue = 0x%%x\r\n", lCRCValue);
+#endif
+
+	return;
+}
+
+void
+convertRELAY_NET_UART_GSCN_GSC2_PointAvg(char *data, int32_t len, int32_t *plen)
+{
+	// set moving integer pointer; skip command ID and length
+	cast_ptr_t lDataPtr = { data };
+	int32_t* lRcvIntegerPtr = &lDataPtr.asIntegerPtr[1];
 	int32_t lSendLength;
 	// take length of parameter block
 	int32_t lNumberOfParameter;
@@ -264,12 +465,14 @@ convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
 	int32_t lNumberOfPoints = 0;
 	int32_t lSendNumberOfPoints = 0;
 
-	lLength = ntohl(*lRcvIntegerPtr++);
 #if 0
+	int32_t lLength;
+	lLength = ntohl(*lRcvIntegerPtr);
 	printf("Length = %d\r\n", lLength);
-#else
-	lLength = lLength;
 #endif
+
+	// skip length field.
+	lRcvIntegerPtr++;
 
 	lNumberOfParameter = ntohl(*lRcvIntegerPtr++);
 	// check compatibility of firmware and control program
@@ -382,7 +585,7 @@ convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
             		lDistanceSum += lDistance;
             	}
 
-            	if (lCnt == param_GSC2_AvgNumber)
+            	if (lCnt == g_GSC2_PointAvgNumber)
             	{
             		if (lSumCnt > 0)
             		{
@@ -446,6 +649,7 @@ convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
 		} // end points
 	}
 
+    CRC32 lCRC;
     int32_t lCRCPosition; // position of the CRC in the buffer
     uint32_t lCRCValue;
 
@@ -462,16 +666,60 @@ convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
 	printf("Send CRCPosition = %d\r\n", lCRCPosition);
 	printf("Send CRCValue = 0x%%x\r\n", lCRCValue);
 #endif
+
+	return;
 }
 
-void
+bool
+convertRELAY_NET_UART_GSCN_GSC2(char *data, int32_t len, int32_t *plen)
+{
+    CRC32 lCRC;
+	int32_t lLength = ntohl(*(int32_t *)(data + 4));
+    uint32_t lCRCExpected = ntohl(*(int32_t *)(data + (len - 4)));
+    uint32_t lCRCReceived = lCRC.get(data, len - 4);
+
+#if 0
+	printf("GSC2: Length = %d(%d)\r\n", lLength, len);
+    printf("GSC2: CRC expected:0x%x, received:0x%x\n", lCRCExpected, lCRCReceived);
+#endif
+    if (len < (lLength + 4*3) || lCRCExpected != lCRCReceived)
+    {
+    	return false;
+    }
+
+	memcpy(g_GSC2_GSCN_rcvd_data[g_GSC2_ScanAvgNumber_cnt], data, len);
+    g_GSC2_ScanAvgNumber_cnt ++;
+#if 0
+    printf("GSC2: g_GSC2_ScanAvgNumber_cnt = %d of %d\n", g_GSC2_ScanAvgNumber_cnt, g_GSC2_ScanAvgNumber);
+#endif
+    if ( g_GSC2_ScanAvgNumber_cnt < g_GSC2_ScanAvgNumber)
+    {
+    	return false;
+    }
+
+    convertRELAY_NET_UART_GSCN_GSC2_ScanAvg(data, len, plen);
+
+    convertRELAY_NET_UART_GSCN_GSC2_PointAvg(data, len, plen);
+
+    return true;
+}
+
+bool
 convertRELAY_NET_UART(char *data, int32_t len, int32_t *plen)
 {
-	if(g_flag_GSC2 && !strncmp(data, "GSCN", 4))
+	if (g_GSC2_flag && !strncmp(data, "GSCN", 4))
 	{
-		convertRELAY_NET_UART_GSCN_GSC2(data, len, plen);
+		if (convertRELAY_NET_UART_GSCN_GSC2(data, len, plen) == false)
+		{
+			memcpy(data, g_GSC2_GSCN_send_data, g_GSC2_GSCN_send_data_len);
+			*plen = g_GSC2_GSCN_send_data_len;
+			return false;
+		}
 	}
+	return true;
 }
+
+char g_RELAY_read_data[DATA_BUF_SIZE_MAX];
 
 /**
  */
@@ -479,7 +727,7 @@ void
 testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile)
 {
 	int32_t read_len;
-	char read_data[64 * 1024];
+	int c = 0;
 
     // terminal mode change on linux for kbhit of isTerminated().
     changemode(1);
@@ -487,18 +735,24 @@ testRELAY(IDataStream& theUART, IDataStream& theSocket, FILE* theTerminalLogFile
     do
 	{
 		// if new data is available on the serial port, print it out
-		if ((read_len = theUART.read(read_data, sizeof(read_data))) > 0)
+		if ((read_len = theUART.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-			convertRELAY_UART_NET(read_data, read_len, &read_len);
-			theSocket.write(read_data, read_len);
+			convertRELAY_UART_NET(g_RELAY_read_data, read_len, &read_len);
+			theSocket.write(g_RELAY_read_data, read_len);
 		}
 		// if new data is available on the console, send it to the serial port
-		if ((read_len = theSocket.read(read_data, sizeof(read_data))) > 0)
+		if ((read_len = theSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-			convertRELAY_NET_UART(read_data, read_len, &read_len);
-			theUART.write(read_data, read_len);
+			if (convertRELAY_NET_UART(g_RELAY_read_data, read_len, &read_len))
+			{
+				theUART.write(g_RELAY_read_data, read_len);
+			}
+			else
+			{
+				theSocket.write(g_RELAY_read_data, read_len);
+			}
 		}
-	} while((kbhit() == 0) || (getch() != 'q'));
+	} while((kbhit() == 0) || (((c = getch()) != 'q') && (c != 'Q') && (c != 27/*VK_ESC*/)));
 
     // terminal mode restore on linux for kbhit of isTerminated().
     changemode(0);

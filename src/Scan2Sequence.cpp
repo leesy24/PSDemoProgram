@@ -265,6 +265,14 @@ Scan2Sequence::run(char* theDataLogFileName)
     mScannerTimeCode = 0;
     mNumberOfScans = 0;
 
+    // ask scan average value
+    fprintf(stdout, "> Scan Average count : ");
+    fscanf(stdin, "%d", &mScanAvgNumber);
+    if (mScanAvgNumber <= 0)
+    {
+    	mScanAvgNumber = 1;
+    }
+
     // ask for the terminating condition
     result = setTerminateCondition();
     if (ERR_SUCCESS == result)
@@ -286,7 +294,7 @@ Scan2Sequence::run(char* theDataLogFileName)
             // request a scan, measure how long this takes on this machine.
             mNumberOfScans++;
             mComputerSendTimeCode = getMilliseconds();
-            result = mGSC2Command.performCommand(0, 1, mScan, theDataLogFileName);
+            result = mGSC2Command.performCommand(mScanAvgNumber, 1, mScan, theDataLogFileName);
             mComputerReceiveTimeCode = getMilliseconds();
 
             // process the scan data and show result
