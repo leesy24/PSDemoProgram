@@ -6,9 +6,14 @@ environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.1929839292/appen
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.1929839292/appendContributed=true
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/PATH/delimiter=;
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/PATH/operation=replace
-environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/PATH/value=C\:\\Linaro-gcc\\bin
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/PATH/value=C\:\\Linaro-gcc\\bin;C\:\\MinGW\\msys\\1.0\\bin
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/append=true
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.debug.344278176/appendContributed=true
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349.1680204666/PATH/delimiter=;
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349.1680204666/PATH/operation=replace
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349.1680204666/PATH/value=${MINGW_HOME}\\bin;${MSYS_HOME}\\bin
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349.1680204666/append=true
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349.1680204666/appendContributed=true
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349/PATH/delimiter=;
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349/PATH/operation=replace
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349/PATH/value=${MINGW_HOME}\\bin;${MSYS_HOME}\\bin
@@ -16,6 +21,6 @@ environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349/app
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1436210349/appendContributed=true
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/PATH/delimiter=;
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/PATH/operation=replace
-environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/PATH/value=C\:\\Linaro-gcc\\bin
+environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/PATH/value=C\:\\Linaro-gcc\\bin;C\:\\MinGW\\msys\\1.0\\bin
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/append=true
 environment/project/cdt.managedbuild.config.gnu.mingw.exe.release.1560568763/appendContributed=true
