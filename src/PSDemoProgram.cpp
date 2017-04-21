@@ -740,6 +740,7 @@ testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* the
 		{
 		    //printf("Client read_len=%d\r\n", read_len);
 			convertRELAY_Client_Sensor(g_RELAY_read_data, read_len, &read_len);
+		    //printf("Sensor write_len=%d\r\n", read_len);
 			theSensorSocket.write(g_RELAY_read_data, read_len);
 		}
 	    //printf("Client read_len=%d\r\n", read_len);
@@ -749,6 +750,7 @@ testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* the
 		    //printf("Sensor read_len=%d\r\n", read_len);
 			if (convertRELAY_Sensor_Client(g_RELAY_read_data, read_len, &read_len))
 			{
+			    //printf("Client write_len=%d\r\n", read_len);
 				theUART.write(g_RELAY_read_data, read_len);
 			}
 			else
@@ -757,6 +759,7 @@ testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* the
 			}
 		}
 	    //printf("Sensor read_len=%d\r\n", read_len);
+	    //printf(".");
 	} while((kbhit() == 0) || (((c = getch()) != 'q') && (c != 'Q') && (c != 27/*VK_ESC*/)));
 
     // terminal mode restore on linux for kbhit of isTerminated().

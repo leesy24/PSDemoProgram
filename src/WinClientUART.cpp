@@ -79,6 +79,9 @@ ErrorID_t ClientUART::open()
         return ERR_INVALID_HANDLE;
 	}
 
+	SetupComm (hComm, 8*1024, 8*1024);  /* Set buffer size. */
+	PurgeComm (hComm, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
+
 	dcbSerialParams.BaudRate = CBR_115200;      // Setting BaudRate = 115200
 	dcbSerialParams.ByteSize = 8;             // Setting ByteSize = 8
 	dcbSerialParams.StopBits = ONESTOPBIT;    // Setting StopBits = 1
@@ -114,26 +117,21 @@ ErrorID_t ClientUART::open()
 	COMMTIMEOUTS timeouts = { 0 };
 	if (mTimeout == 0)
 	{
-#if 1
 		// Ref. https://groups.google.com/forum/#!topic/comp.os.ms-windows.programmer.win32/SotVc2_Eiig
 		timeouts.ReadIntervalTimeout         = MAXDWORD;
-		timeouts.ReadTotalTimeoutConstant    = 0;
 		timeouts.ReadTotalTimeoutMultiplier  = 0;
-#else
-		timeouts.ReadIntervalTimeout         = 50;
-		timeouts.ReadTotalTimeoutConstant    = 50;
-		timeouts.ReadTotalTimeoutMultiplier  = 10;
-#endif
-		timeouts.WriteTotalTimeoutConstant   = 0;
+		timeouts.ReadTotalTimeoutConstant    = 0;
 		timeouts.WriteTotalTimeoutMultiplier = 0;
+		timeouts.WriteTotalTimeoutConstant   = 0;
 	}
 	else
 	{
+		// Ref. https://msdn.microsoft.com/en-us/library/windows/desktop/aa363190(v=vs.85).aspx
 		timeouts.ReadIntervalTimeout         = MAXDWORD;
+		timeouts.ReadTotalTimeoutMultiplier  = MAXDWORD;
 		timeouts.ReadTotalTimeoutConstant    = mTimeout;
-		timeouts.ReadTotalTimeoutMultiplier  = 0;
-		timeouts.WriteTotalTimeoutConstant   = 0;
 		timeouts.WriteTotalTimeoutMultiplier = 0;
+		timeouts.WriteTotalTimeoutConstant   = 0;
 	}
 
 	if (SetCommTimeouts(hComm, &timeouts) == FALSE)
