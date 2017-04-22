@@ -5,9 +5,11 @@
  *      Author: leesy
  */
 
-#if __WIN32__
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
 
 #include "WinClientUART.hpp"
+// needed for ntohl
+#include <winsock2.h>
 
 //#define DEBUG_WRITE 1
 //#define DEBUG_READ 1

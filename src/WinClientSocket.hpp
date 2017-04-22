@@ -29,30 +29,11 @@
  */
 
 // Windows version
-#ifdef  __WIN32__
-extern "C"
-{
-#include <winsock2.h>
-}
-#endif
-
-// Linux version
-#if __linux__
-
-// disable windows calls
-#define __WIN32__ (0)
-
-extern "C"
-{
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-    namespace unistd
-    {
-    #include <unistd.h>
-    }
-}
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
+	extern "C"
+	{
+		#include <winsock2.h>
+	}
 #endif
 
 #include <cstdio>

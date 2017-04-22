@@ -7,12 +7,12 @@
 
 #ifndef SRC_KBHITGETCH_H_
 #define SRC_KBHITGETCH_H_
-	#if __WIN32__
+	#if defined(__WIN32__)
 		/* On windows, we can use kbhit() to check if ESC has been pressed. */
 		#include <conio.h>
 
 		#define changemode(dir)
-	#elif __linux__
+	#elif defined(__linux__) || (defined(__CYGWIN__) && !defined(_WIN32))
 		#if defined (__cplusplus)
 			extern "C" {
 		#endif

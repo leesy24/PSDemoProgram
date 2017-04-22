@@ -5,7 +5,7 @@
  *      Author: leesy
  */
 
-#ifdef __linux__
+#if defined(__linux__) || (defined(__CYGWIN__) && !defined(_WIN32))
 /* Ref. http://cboard.cprogramming.com/linux-programming/51531-faq-cached-input-mygetch.html?highlight=kbhit */
 #include <stdio.h>
 #include <termios.h>

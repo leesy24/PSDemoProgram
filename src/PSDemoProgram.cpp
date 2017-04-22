@@ -28,14 +28,14 @@
 #include <cstdlib>
 #include <cstring>
 
-#if __linux__
-#include "LinuxClientSocket.hpp"
-#include "LinuxClientUART.hpp"
-#elif __WIN32__
-#include "WinClientSocket.hpp"
-#include "WinClientUART.hpp"
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
+	#include "WinClientSocket.hpp"
+	#include "WinClientUART.hpp"
+#elif defined(__linux__)
+	#include "LinuxClientSocket.hpp"
+	#include "LinuxClientUART.hpp"
 #else
-#error "This program requires Linux or Win32."
+	#error "This program requires Linux or Win32."
 #endif
 
 #include "ErrorID.h"

@@ -21,9 +21,9 @@
 #include "CommandFileStream.hpp"
 
 // needed for ntohl
-#if  __WIN32__
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
 	#include <winsock2.h>
-#elif __linux__
+#elif defined(__linux__)
 	#include <arpa/inet.h>
 #else
 	#error "This program requires Linux or Win32."

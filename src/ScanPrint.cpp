@@ -26,10 +26,10 @@
 #include "IDataStream.hpp"
 #include "ScanPrint.hpp"
 
-#if __WIN32__
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
 	#include <windows.h>
 	#define sleep_msecs(s) Sleep(s)
-#elif __linux__
+#elif defined(__linux__)
 	#include <unistd.h>
 	#define sleep_msecs(s) usleep(s*1000)
 #else

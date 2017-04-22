@@ -22,12 +22,12 @@
 
 #include "CommandBase.hpp"
 
-#ifdef  __WIN32__
-#include "WinClientSocket.hpp"
-#endif
-
-#ifdef __linux__
-#include "LinuxClientSocket.hpp"
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
+	#include "WinClientSocket.hpp"
+#elif defined(__linux__)
+	#include "LinuxClientSocket.hpp"
+#else
+	#error "This program requires Linux or Win32."
 #endif
 
 /* Constructor */

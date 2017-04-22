@@ -28,9 +28,7 @@
  * - Changed: support Linux sockets.
  */
 
-#ifndef __linux__
-#warning This source requires a Linux compiler.
-#else
+#if defined(__linux__)
 
 #include <cstdio>
 #include <netinet/in.h>

@@ -21,7 +21,7 @@
  ****************************************************************************
  */
 
-#if __WIN32__
+#if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
 
 #include "WinClientSocket.hpp"
 #include <cstring>
@@ -179,7 +179,7 @@ ClientSocket::open()
     if (mTimeout == 0)
     {
     	// If iMode!=0, non-blocking mode is enabled.
-		u_long iMode=1;
+		__ms_u_long iMode=1;
 		ioctlsocket(mSocketHandle, FIONBIO, &iMode);
     }
     else
