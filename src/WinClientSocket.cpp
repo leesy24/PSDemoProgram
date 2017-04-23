@@ -179,7 +179,11 @@ ClientSocket::open()
     if (mTimeout == 0)
     {
     	// If iMode!=0, non-blocking mode is enabled.
+#if (defined(__CYGWIN__) && !defined(_WIN32))
 		__ms_u_long iMode=1;
+#elif defined(__WIN32__)
+		u_long iMode=1;
+#endif
 		ioctlsocket(mSocketHandle, FIONBIO, &iMode);
     }
     else
