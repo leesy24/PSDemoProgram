@@ -720,6 +720,10 @@ convertRELAY_Sensor_Client(char *data, int32_t len, int32_t *plen)
 
 char g_RELAY_read_data[DATA_BUF_SIZE_MAX];
 
+//#define DEBUG_RELAY_U 1
+//#define DEBUG_RELAY_U_DOT 1
+//#define DEBUG_RELAY_U_NO_DOT 1
+
 /**
  */
 void
@@ -738,19 +742,32 @@ testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* the
 		// if new data is available on the serial port, print it out
 		if ((read_len = theUART.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-		    //printf("Client read_len=%d\r\n", read_len);
-			convertRELAY_Client_Sensor(g_RELAY_read_data, read_len, &read_len);
-		    //printf("Sensor write_len=%d\r\n", read_len);
-			theSensorSocket.write(g_RELAY_read_data, read_len);
+#if DEBUG_RELAY_U
+		    printf("Client read_len=%d\r\n", read_len);
+#endif
+		    convertRELAY_Client_Sensor(g_RELAY_read_data, read_len, &read_len);
+#if DEBUG_RELAY_U
+		    printf("Sensor write_len=%d\r\n", read_len);
+#endif
+		    theSensorSocket.write(g_RELAY_read_data, read_len);
 		}
-	    //printf("Client read_len=%d\r\n", read_len);
+#if DEBUG_RELAY_U_NO_DOT
+		else
+		{
+			printf("Client read_len=%d\r\n", read_len);
+		}
+#endif
 		// if new data is available on the console, send it to the serial port
 		if ((read_len = theSensorSocket.read(g_RELAY_read_data, sizeof(g_RELAY_read_data))) > 0)
 		{
-		    //printf("Sensor read_len=%d\r\n", read_len);
+#if DEBUG_RELAY_U
+		    printf("Sensor read_len=%d\r\n", read_len);
+#endif
 			if (convertRELAY_Sensor_Client(g_RELAY_read_data, read_len, &read_len))
 			{
-			    //printf("Client write_len=%d\r\n", read_len);
+#if DEBUG_RELAY_U
+			    printf("Client write_len=%d\r\n", read_len);
+#endif
 				theUART.write(g_RELAY_read_data, read_len);
 			}
 			else
@@ -758,8 +775,15 @@ testRELAY_UART_NET(IDataStream& theUART, IDataStream& theSensorSocket, FILE* the
 				theSensorSocket.write(g_RELAY_read_data, read_len);
 			}
 		}
-	    //printf("Sensor read_len=%d\r\n", read_len);
-	    //printf(".");
+#if DEBUG_RELAY_U_NO_DOT
+		else
+		{
+			printf("Sensor read_len=%d\r\n", read_len);
+		}
+#endif
+#if DEBUG_RELAY_U_DOT
+		printf(".");
+#endif
 	} while((kbhit() == 0) || (((c = getch()) != 'q') && (c != 'Q') && (c != 27/*VK_ESC*/)));
 
     // terminal mode restore on linux for kbhit of isTerminated().

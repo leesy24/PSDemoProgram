@@ -14,6 +14,8 @@
 //#define DEBUG_WRITE 1
 //#define DEBUG_READ 1
 
+#define BUFFER_MAX (8*1024)
+
 ClientUART::ClientUART() :
         mIsOpen(false), //
 		mPort("\0"), //
@@ -81,7 +83,7 @@ ErrorID_t ClientUART::open()
         return ERR_INVALID_HANDLE;
 	}
 
-	SetupComm (hComm, 8*1024, 8*1024);  /* Set buffer size. */
+	SetupComm (hComm, BUFFER_MAX, BUFFER_MAX);  /* Set buffer size. */
 	PurgeComm (hComm, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
 
 	dcbSerialParams.BaudRate = CBR_115200;      // Setting BaudRate = 115200
@@ -165,6 +167,8 @@ ErrorID_t ClientUART::close()
 	return ERR_SUCCESS;
 }
 
+#define LOOP_MAX 100
+
 int32_t ClientUART::read(void* buffer, int32_t size)
 {
 	BOOL  Status;			// Status of the various operations
@@ -173,6 +177,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	int32_t total = 0; // Init. total received data.
 	int state = 0; // Init. state machine for getting length data of UDP data format.
 	int32_t length = INT32_MAX - 12; // 12 = 4bytes Function code + 4bytes length + 4bytes CRC on UDP data format.
+	int32_t loop = 0;
 
 #if DEBUG_READ
 	printf("Reading UART data!\r\n");
@@ -201,15 +206,33 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 			if (total == 0)
 			{
 #if DEBUG_READ
-				printf("Read zero byte UART data!\r\n");
+				printf("Read zero byte UART data! %d, %d\r\n", NoBytesRead, total);
 #endif
 				return 0;
 			}
 			// If read() return zero byte on timeout than break from loop.
 			if (mTimeout != 0)
 			{
-				break;
+#if DEBUG_READ
+				printf("Read timeout! %d, %d\r\n", NoBytesRead, total);
+#endif
+				return 0;
 			}
+			else // read() return zero byte on non-blocking mode
+			{
+				loop ++;
+				if (loop > LOOP_MAX)
+				{
+#if DEBUG_READ
+					printf("Read zero byte UART data! %d, %d\r\n", NoBytesRead, total);
+#endif
+					return 0;
+				}
+			}
+		}
+		else
+		{
+			loop = 0;
 		}
 
 		total += (int32_t)NoBytesRead;
@@ -226,6 +249,13 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 #if DEBUG_READ
 				printf("Read format Length = %d\r\n", length);
 #endif
+				if (length > BUFFER_MAX - 12)
+				{
+#if DEBUG_READ
+					printf("Read format Length error!\r\n");
+#endif
+					return 0;
+				}
 				state = 1; // Set state machine to other.
 			}
 		}
@@ -233,15 +263,17 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 
 #if DEBUG_READ
 	printf("Read %d byte UART data!\r\n", total);
+//#if 0
 	for(int32_t i = 0; i < total; i ++)
 	{
 		printf("0x%x('%c') ", *((unsigned char *)buffer+i), *((unsigned char *)buffer+i));
 		//printf("0x%x ", *((unsigned char *)buffer+i));
 	}
 	printf("\r\n");
+//#endif
 #endif
 
-	return total;
+	return (length + 12);
 }
 
 int32_t ClientUART::write(void* buffer, int32_t size)
