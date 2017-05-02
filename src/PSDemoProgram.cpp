@@ -859,6 +859,7 @@ main(int argc, char **argv)
 #else // if __linux__
     string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default my UART port.
 #endif
+    string32_t lUARTBaudRate = { "115200" }; // you may enter here your default my UART port.
     //FILE* lDataLogFile = 0;
     FILE* lTerminalLogFile = 0;
 
@@ -881,7 +882,7 @@ main(int argc, char **argv)
 				"   [data log file] [terminal log file]\r\n"
 				"    -or-\r\n"
 				"   UART\r\n"
-				"   [UART_port]\r\n"
+				"   [UART_port] [BAUD_rate]\r\n"
 				"   [data log file] [terminal log file]\r\n"
 				"    -or-\r\n"
 				"   RELAY_N\r\n"
@@ -890,18 +891,21 @@ main(int argc, char **argv)
 				"   [data log file] [terminal log file]\r\n"
 				"    -or-\r\n"
 				"   RELAY_U\r\n"
-				"   [UART_port]\r\n"
+				"   [UART_port] [BAUD_rate]\r\n"
 				"   [sensor_ip_address] [sensor_port] [my_port]\r\n"
 				"   [data log file] [terminal log file]\r\n\n");
 		printf(	"Example:\r\n");
-		printf(	"   PSDemoProgram NET 10.0.3.12 1024 1025 scans.dat term.txt\r\n"
+		printf(	"   PSDemoProgram NET 10.0.3.12 1024 1025 data.bin term.txt\r\n"
 				"    -or- PSDemoProgram NET 10.0.3.12\r\n");
-		printf(	"   PSDemoProgram UART %s terminal.txt scans.dat\r\n", lUARTName);
+		printf(	"   PSDemoProgram UART %s 115200 data.bin terminal.txt\r\n", lUARTName);
 		printf(	"    -or- PSDemoProgram UART %s\r\n", lUARTName);
-		printf(	"   PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12 1024 1025 scans.dat term.txt\r\n");
+		printf(	"    -or- PSDemoProgram UART %s:115200 data.bin\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram UART %s:9600\r\n", lUARTName);
+		printf(	"   PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12 1024 1025 data.bin term.txt\r\n");
 		printf(	"    -or- PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12\r\n");
-		printf(	"   PSDemoProgram RELAY_U %s 10.0.3.12 1024 1025 scans.dat term.txt\r\n", lUARTName);
-		printf(	"    -or- PSDemoProgram RELAY_U %s 10.0.3.12\r\n", lUARTName);
+		printf(	"   PSDemoProgram RELAY_U %s:115200 10.0.3.12 1024 1025 data.bin term.txt\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram RELAY_U %s:115200 10.0.3.12\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram RELAY_U %s:9600 10.0.3.12\r\n", lUARTName);
 		return -1;
 	}
 
@@ -957,12 +961,19 @@ main(int argc, char **argv)
 		}
 		else // if (!strcmp(argv[1], "UART"))
 		{
-			// get UART port from the command line
+			// get UART port and baud rate from the command line
 			if (argc >= 3)
 			{
+				char *lp;
 				strcpy(lUARTName, argv[2]);
+				if ((lp = strchr(lUARTName, ':')))
+				{
+					*lp = 0;
+					strcpy(lUARTBaudRate, lp + 1);
+				}
 			}
-			printf("UART port: %s\r\n\n", lUARTName);
+			printf("UART port: %s\r\n", lUARTName);
+			printf("UART baud rate: %s\r\n\n", lUARTBaudRate);
 
 			// open the log files
 			if (argc >= 4)
@@ -978,7 +989,12 @@ main(int argc, char **argv)
 			printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 			// configure the UART
-			lClientUART.config(lUARTName, 10, 0/*lDataLogFile*/);
+			if (ERR_SUCCESS != lClientUART.config(lUARTName, atoi(lUARTBaudRate), 10, 0/*lDataLogFile*/))
+			{
+				if (lTerminalLogFile) fclose(lTerminalLogFile);
+				fprintf(stderr, "Error: Cannot config UART connection!\r\n");
+				return ERR_IO;
+			}
 
 			// open the UART
 			if (ERR_SUCCESS != lClientUART.open())
@@ -1130,12 +1146,19 @@ main(int argc, char **argv)
     }
     else //if (!strcmp(argv[1], "RELAY_U"))
     {
-		// get UART port from the command line
+		// get UART port and baud rate from the command line
 		if (argc >= 3)
 		{
+			char *lp;
 			strcpy(lUARTName, argv[2]);
+			if ((lp = strchr(lUARTName, ':')))
+			{
+				*lp = 0;
+				strcpy(lUARTBaudRate, lp + 1);
+			}
 		}
-		printf("UART port: %s\r\n\n", lUARTName);
+		printf("UART port: %s\r\n", lUARTName);
+		printf("UART baud rate: %s\r\n\n", lUARTBaudRate);
 
 		// get sensor IP and port from the command line
 		if (4 <= argc)
@@ -1167,7 +1190,12 @@ main(int argc, char **argv)
 		printf("Data log file name: %s\r\n\n", lDataLogFileName);
 
 		// configure the UART
-		lClientUART.config(lUARTName, 0, 0/*lDataLogFile*/);
+		if (ERR_SUCCESS != lClientUART.config(lUARTName, atoi(lUARTBaudRate), 0, 0/*lDataLogFile*/))
+		{
+			if (lTerminalLogFile) fclose(lTerminalLogFile);
+			fprintf(stderr, "Error: Cannot config UART connection!\r\n");
+			return ERR_IO;
+		}
 
 		// open the UART
 		if (ERR_SUCCESS != lClientUART.open())

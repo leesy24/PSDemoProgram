@@ -40,8 +40,71 @@ ClientUART::~ClientUART()
 		close();
 }
 
-ErrorID_t ClientUART::config(const char* thePort, int32_t theTimeout, FILE* theLogFile)
+ErrorID_t ClientUART::config(const char* thePort, unsigned int theBaudRate, int32_t theTimeout, FILE* theLogFile)
 {
+	switch(theBaudRate)
+	{
+		case 50:
+			mBaudRate = B50;
+			break;
+		case 75:
+			mBaudRate = B75;
+			break;
+		case 110:
+			mBaudRate = B110;
+			break;
+		case 134:
+			mBaudRate = B134;
+			break;
+		case 150:
+			mBaudRate = B150;
+			break;
+		case 200:
+			mBaudRate = B200;
+			break;
+		case 300:
+			mBaudRate = B300;
+			break;
+		case 600:
+			mBaudRate = B600;
+			break;
+		case 1200:
+			mBaudRate = B1200;
+			break;
+		case 1800:
+			mBaudRate = B1800;
+			break;
+		case 2400:
+			mBaudRate = B2400;
+			break;
+		case 4800:
+			mBaudRate = B4800;
+			break;
+		case 9600:
+			mBaudRate = B9600;
+			break;
+		case 19200:
+			mBaudRate = B19200;
+			break;
+		case 38400:
+			mBaudRate = B38400;
+			break;
+		case 57600:
+			mBaudRate = B57600;
+			break;
+		case 115200:
+			mBaudRate = B115200;
+			break;
+		case 230400:
+			mBaudRate = B230400;
+			break;
+		case 460800:
+			mBaudRate = B460800;
+			break;
+		default:
+			return ERR_CONFIGURATION_ERROR;
+	}
+
 	strcpy(mPort, thePort);
 
 	// set in ms
@@ -86,8 +149,8 @@ ErrorID_t ClientUART::open()
 		tio.c_cc[VMIN] = 0;
 		tio.c_cc[VTIME] = mTimeout / 100;
 	}
-	cfsetospeed(&tio, B115200);            // 115200 baud
-	cfsetispeed(&tio, B115200);            // 115200 baud
+	cfsetospeed(&tio, (speed_t)mBaudRate);            // mBaudRate
+	cfsetispeed(&tio, (speed_t)mBaudRate);            // mBaudRate
 	tcsetattr(tty_fd, TCSANOW, &tio);
 
 	mIsOpen = true;

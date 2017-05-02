@@ -21,6 +21,7 @@ class ClientUART : public IDataStream
 
         /** the sensors UART port */
 		string32_t mPort;
+		unsigned int mBaudRate;
 
 		HANDLE hComm;                          // Handle to the Serial port
 
@@ -43,7 +44,7 @@ class ClientUART : public IDataStream
 
 		virtual ~ClientUART();
 
-		ErrorID_t config(const char* thePort, int32_t theTimeout, FILE* theLogFile);
+		ErrorID_t config(const char* thePort, unsigned int theBaudRate, int32_t theTimeout, FILE* theLogFile);
 
 		virtual ErrorID_t open();
 

@@ -31,9 +31,32 @@ ClientUART::~ClientUART()
 		close();
 }
 
-ErrorID_t ClientUART::config(const char* thePort, int32_t theTimeout, FILE* theLogFile)
+ErrorID_t ClientUART::config(const char* thePort, unsigned int theBaudRate, int32_t theTimeout, FILE* theLogFile)
 {
+	switch(theBaudRate)
+	{
+		case CBR_110:
+		case CBR_300:
+		case CBR_600:
+		case CBR_1200:
+		case CBR_2400:
+		case CBR_4800:
+		case CBR_9600:
+		case CBR_14400:
+		case CBR_19200:
+		case CBR_38400:
+		case CBR_56000:
+		case CBR_57600:
+		case CBR_115200:
+		case CBR_128000:
+		case CBR_256000:
+			break;
+		default:
+			return ERR_CONFIGURATION_ERROR;
+	}
+
 	strcpy(mPort, thePort);
+	mBaudRate = theBaudRate;
 
 	// set in ms
     mTimeout = theTimeout * 1000;
@@ -86,7 +109,7 @@ ErrorID_t ClientUART::open()
 	SetupComm (hComm, BUFFER_MAX, BUFFER_MAX);  /* Set buffer size. */
 	PurgeComm (hComm, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
 
-	dcbSerialParams.BaudRate = CBR_115200;      // Setting BaudRate = 115200
+	dcbSerialParams.BaudRate = mBaudRate;      // Setting BaudRate = mBaudRate
 	dcbSerialParams.ByteSize = 8;             // Setting ByteSize = 8
 	dcbSerialParams.StopBits = ONESTOPBIT;    // Setting StopBits = 1
 	dcbSerialParams.Parity = NOPARITY;        // Setting Parity = None
