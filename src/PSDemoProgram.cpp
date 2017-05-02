@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctype.h>
 
 #if defined(__WIN32__) || (defined(__CYGWIN__) && !defined(_WIN32))
 	#include "WinClientSocket.hpp"
@@ -842,6 +843,7 @@ main(int argc, char **argv)
     IDataStream *lpDataSteam;
     bool done = false;
     int32_t lSelection = 0;
+    char lSelectionString[10];
     int32_t lClientPort = 1025;
     string32_t lClientIP = { "10.0.10.1" }; // default client IP
     ClientSocket lClientSocket;
@@ -1001,10 +1003,15 @@ main(int argc, char **argv)
 	                " 6 - SCN2: Starting a scan2 sequence\r\n"
 	                " 7 - SCN2PR: Getting a scan2 data and print graph\r\n");
 	        printf( " 0 - Exit\r\n> ");
+
 	        lSelection = -1;
-	        fscanf(stdin, "%d", &lSelection);
-	        while((getchar())!='\n');
-	        printf( "key input = %d\r\n> ", lSelection);
+	        fflush(stdin);
+	        fgets(lSelectionString, sizeof(lSelectionString), stdin);
+	        if (isdigit(lSelectionString[0]))
+	        {
+	        	lSelection = lSelectionString[0]?atoi(lSelectionString):-1;
+	        }
+	        //printf( "key input = %d\r\n> ", lSelection);
 
 	        switch (lSelection)
 	        {
