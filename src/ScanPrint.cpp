@@ -249,7 +249,7 @@ ScanPrint::logScan()
                 		lDistanceSum += lDistance;
                 	}
 
-                	if (lCnt == mAvgNumber)
+                	if (lCnt == mPointAvgNumber)
                 	{
                 		if (lSumCnt > 0)
                 		{
@@ -346,11 +346,11 @@ ScanPrint::run(char* theDataLogFileName)
     mNumberOfScans = 0;
 
     // ask average value
-    fprintf(stdout, "> Average count : ");
-    fscanf(stdin, "%d", &mAvgNumber);
-    if (mAvgNumber <= 0)
+    fprintf(stdout, "> Point Average count : ");
+    fscanf(stdin, "%d", &mPointAvgNumber);
+    if (mPointAvgNumber <= 0)
     {
-    	mAvgNumber = 1;
+    	mPointAvgNumber = 1;
     }
 
     // ask for the terminating condition
@@ -417,8 +417,8 @@ ScanPrint::setTerminateCondition()
     int32_t lScanPeriod = 0;
 
     // enter the scan period
-//    fprintf(stdout, "> Scan period [s] (0=infinitive): ");
-//    fscanf(stdin, "%d", &lScanPeriod);
+    //fprintf(stdout, "> Scan period [s] (0=infinitive): ");
+    //fscanf(stdin, "%d", &lScanPeriod);
 
     // convert to ms
     mScanPeriod = lScanPeriod * 1000;

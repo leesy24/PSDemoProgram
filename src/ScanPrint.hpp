@@ -114,8 +114,8 @@ class ScanPrint
         /** the terminal log file */
         FILE* mTerminalLogFile;
 
-        /** number of the average count */
-        int32_t mAvgNumber;
+        /** number of the point average count */
+        int32_t mPointAvgNumber;
 
         /**
          * Returns the current system time in ms.
