@@ -856,8 +856,10 @@ main(int argc, char **argv)
     string32_t lTerminalLogFileName = { 0 };
 #if __WIN32__
     string32_t lUARTName = { "COM4" }; // you may enter here your default my UART port.
+    string32_t lDataLogFile = { "c:\\temp\\data.bin" };
 #else // if __linux__
     string32_t lUARTName = { "/dev/ttyO1" }; // you may enter here your default my UART port.
+    string32_t lDataLogFile = { "/tmp/data.bin" };
 #endif
     string32_t lUARTBaudRate = { "115200" }; // you may enter here your default my UART port.
     //FILE* lDataLogFile = 0;
@@ -895,15 +897,15 @@ main(int argc, char **argv)
 				"   [sensor_ip_address] [sensor_port] [my_port]\r\n"
 				"   [data log file] [terminal log file]\r\n\n");
 		printf(	"Example:\r\n");
-		printf(	"   PSDemoProgram NET 10.0.3.12 1024 1025 data.bin term.txt\r\n"
-				"    -or- PSDemoProgram NET 10.0.3.12\r\n");
-		printf(	"   PSDemoProgram UART %s 115200 data.bin terminal.txt\r\n", lUARTName);
-		printf(	"    -or- PSDemoProgram UART %s\r\n", lUARTName);
-		printf(	"    -or- PSDemoProgram UART %s:115200 data.bin\r\n", lUARTName);
+		printf(	"   PSDemoProgram NET 10.0.3.12 1024 1025 %s\r\n", lDataLogFile);
+		printf(	"    -or- PSDemoProgram NET 10.0.3.12\r\n");
+		printf(	"   PSDemoProgram UART %s %s\r\n", lUARTName, lDataLogFile);
+		printf(	"    -or- PSDemoProgram UART %s:115200\r\n", lUARTName);
+		printf(	"    -or- PSDemoProgram UART %s:115200 %s\r\n", lUARTName, lDataLogFile);
 		printf(	"    -or- PSDemoProgram UART %s:9600\r\n", lUARTName);
-		printf(	"   PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12 1024 1025 data.bin term.txt\r\n");
+		printf(	"   PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12 1024 1025 %s\r\n", lDataLogFile);
 		printf(	"    -or- PSDemoProgram RELAY_N 10.0.10.1 1025 10.0.3.12\r\n");
-		printf(	"   PSDemoProgram RELAY_U %s:115200 10.0.3.12 1024 1025 data.bin term.txt\r\n", lUARTName);
+		printf(	"   PSDemoProgram RELAY_U %s:115200 10.0.3.12 1024 1025 %s\r\n", lUARTName, lDataLogFile);
 		printf(	"    -or- PSDemoProgram RELAY_U %s:115200 10.0.3.12\r\n", lUARTName);
 		printf(	"    -or- PSDemoProgram RELAY_U %s:9600 10.0.3.12\r\n", lUARTName);
 		return -1;
