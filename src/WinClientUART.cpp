@@ -94,20 +94,49 @@ ErrorID_t ClientUART::open()
 	}
 	printf("    Port %s Opened\r\n", mPort);
 
+	// Set Event Mask zero to disables all events.
+	DWORD dwEvtMask;
+/*
+	Status = GetCommMask(hComm, &dwEvtMask);
+	if (Status == FALSE)
+	{
+		fprintf(stderr, "    Error! in GetCommMask()\r\n");
+        return ERR_INVALID_HANDLE;
+	}
+	printf("    Get Event Mask 0x%x\r\n", dwEvtMask);
+*/
+	dwEvtMask = 0;
+	Status = SetCommMask(hComm, dwEvtMask);
+	if (Status == FALSE)
+	{
+		fprintf(stderr, "    Error! in SetCommMask()\r\n");
+        return ERR_INVALID_HANDLE;
+	}
+	printf("    Set Event Mask 0x%x\r\n", dwEvtMask);
+
+	Status = SetupComm (hComm, BUFFER_MAX, BUFFER_MAX);  /* Set buffer size. */
+	if (Status == FALSE)
+	{
+		fprintf(stderr, "    Error! in SetupComm()\r\n");
+        return ERR_INVALID_HANDLE;
+	}
+	Status = PurgeComm (hComm, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
+	if (Status == FALSE)
+	{
+		fprintf(stderr, "    Error! in PurgeComm()\r\n");
+        return ERR_INVALID_HANDLE;
+	}
+
 	/*------------------------------- Setting the Parameters for the SerialPort ------------------------------*/
 	DCB dcbSerialParams = { 0 };                         // Initializing DCB structure
 	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 
-	Status = GetCommState(hComm, &dcbSerialParams);      //retreives  the current settings
-
+	Status = GetCommState(hComm, &dcbSerialParams);      // Retrieves  the current settings
 	if (Status == FALSE)
 	{
 		fprintf(stderr, "    Error! in GetCommState()\r\n");
         return ERR_INVALID_HANDLE;
 	}
-
-	SetupComm (hComm, BUFFER_MAX, BUFFER_MAX);  /* Set buffer size. */
-	PurgeComm (hComm, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
 
 	dcbSerialParams.BaudRate = mBaudRate;      // Setting BaudRate = mBaudRate
 	dcbSerialParams.ByteSize = 8;             // Setting ByteSize = 8
@@ -134,7 +163,7 @@ ErrorID_t ClientUART::open()
 		fprintf(stderr, "    Error! in Setting DCB Structure\r\n");
         return ERR_INVALID_HANDLE;
 	}
-	printf("    Setting DCB Structure Successfull\r\n\r\n");
+	printf("    Setting DCB Structure successfully\r\n");
 	printf("       Baudrate = %ld\r\n", dcbSerialParams.BaudRate);
 	printf("       ByteSize = %d\r\n", dcbSerialParams.ByteSize);
 	printf("       StopBits = %s\r\n", dcbSerialParams.StopBits == 0?"1bit":"1.5or2bits");
@@ -166,7 +195,7 @@ ErrorID_t ClientUART::open()
 		fprintf(stderr, "    Error! in Setting Time Outs\r\n");
         return ERR_INVALID_HANDLE;
 	}
-	printf("    Setting Serial Port Timeouts Successfull\r\n");
+//	printf("    Setting Serial Port Timeouts successfully\r\n");
 
 	mIsOpen = true;
     return ERR_SUCCESS;
