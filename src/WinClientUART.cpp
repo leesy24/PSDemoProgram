@@ -10,6 +10,7 @@
 #include "WinClientUART.hpp"
 // needed for ntohl
 #include <winsock2.h>
+#include <ctype.h>
 
 //#define DEBUG_WRITE 1
 //#define DEBUG_READ 1
@@ -232,7 +233,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	int32_t loop = 0;
 
 #if DEBUG_READ
-	printf("Reading UART data!\r\n");
+	//printf("Reading UART data!\r\n");
 #endif
 	if (!mIsOpen)
 	{
@@ -258,7 +259,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 			if (total == 0)
 			{
 #if DEBUG_READ
-				printf("Read zero byte UART data! %d, %d\r\n", NoBytesRead, total);
+				//printf("Read zero byte UART data! %d, %d\r\n", NoBytesRead, total);
 #endif
 				return 0;
 			}
@@ -318,7 +319,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 //#if 0
 	for(int32_t i = 0; i < total; i ++)
 	{
-		printf("0x%x('%c') ", *((unsigned char *)buffer+i), *((unsigned char *)buffer+i));
+		printf("0x%x(%c) ", *((unsigned char *)buffer+i), isprint(*((unsigned char *)buffer+i))?*((unsigned char *)buffer+i):' ');
 		//printf("0x%x ", *((unsigned char *)buffer+i));
 	}
 	printf("\r\n");
@@ -344,8 +345,8 @@ int32_t ClientUART::write(void* buffer, int32_t size)
 	printf("Writing UART data %d bytes!\r\n", size);
 	for(int i = 0; i < size; i ++)
 	{
-		//printf("0x%x('%c') ", *((unsigned char *)buffer+i), *((unsigned char *)buffer+i));
-		printf("0x%x ", *((unsigned char *)buffer+i));
+		printf("0x%x(%c) ", *((unsigned char *)buffer+i), isprint(*((unsigned char *)buffer+i))?*((unsigned char *)buffer+i):' ');
+		//printf("0x%x ", *((unsigned char *)buffer+i));
 	}
 	printf("\r\n");
 #endif

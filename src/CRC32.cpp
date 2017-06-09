@@ -20,7 +20,7 @@
  *
  ****************************************************************************
  */
-
+#include <stdio.h>
 #include "CRC32.hpp"
 
 /*  a local flag indicating if the CRC table was initialized */
@@ -55,7 +55,9 @@ CRC32::CRC32() :
             }
 
             sCRCTable[iCodes] = reflect(sCRCTable[iCodes], CRC32_WIDTH);
+			//printf("0x%08x, ", sCRCTable[iCodes]);
         }
+		//printf("\r\n");
         sCRC32IsInitialized = true;
     }
 }
