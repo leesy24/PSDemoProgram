@@ -11,9 +11,12 @@
 // needed for ntohl
 #include <winsock2.h>
 #include <ctype.h>
+#include <windows.h>
 
 //#define DEBUG_WRITE 1
 //#define DEBUG_READ 1
+
+#define sleep_msecs(s) Sleep(s)
 
 #define BUFFER_MAX (8*1024)
 
@@ -282,15 +285,15 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 					return 0;
 				}
 			}
+			sleep_msecs(1);
+			continue;
 		}
-		else
-		{
-			loop = 0;
-		}
+
+		loop = 0;
 
 		total += (int32_t)NoBytesRead;
 #if DEBUG_READ
-		printf("Read total %d bytes!\r\n", total);
+		//printf("Read total %d bytes!\r\n", total);
 #endif
 
 		if (state == 0) // If state machine is getting length data.
@@ -300,12 +303,12 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 				// Get length data from network endians data.
 				length = ntohl(*(unsigned int *)((unsigned char *)buffer + 4));
 #if DEBUG_READ
-				printf("Read format Length = %d\r\n", length);
+				//printf("Read format Length = %d\r\n", length);
 #endif
 				if (length > BUFFER_MAX - 12)
 				{
 #if DEBUG_READ
-					printf("Read format Length error!\r\n");
+					printf("Read format Length error! %d\r\n", length);
 #endif
 					return 0;
 				}
@@ -315,6 +318,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	} while(total < length + 12); // Loop until total received data should reach as UDP data format(Function Code + Length + Data + CRC).
 
 #if DEBUG_READ
+/*
 	printf("Read %d byte UART data!\r\n", total);
 //#if 0
 	for(int32_t i = 0; i < total; i ++)
@@ -324,6 +328,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 	}
 	printf("\r\n");
 //#endif
+*/
 #endif
 
 	return (length + 12);

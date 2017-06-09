@@ -23,6 +23,8 @@ namespace fcntl {
 //#define DEBUG_WRITE 1
 //#define DEBUG_READ 1
 
+#define sleep_msecs(s) unistd::usleep(s*1000)
+
 #define BUFFER_MAX (8*1024)
 
 ClientUART::ClientUART() :
@@ -228,11 +230,11 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 					return 0;
 				}
 			}
+			sleep_msecs(1);
+			continue;
 		}
-		else
-		{
-			loop = 0;
-		}
+
+		loop = 0;
 
 		total += n;
 #if DEBUG_READ
