@@ -18,6 +18,8 @@ namespace fcntl {
 	#include <fcntl.h>
 }
 #include <string.h>
+#include <errno.h>
+
 #include "LinuxClientUART.hpp"
 
 //#define DEBUG_WRITE 1
@@ -124,14 +126,20 @@ ErrorID_t ClientUART::open()
 	if (mPort == NULL)
 	{
         fprintf(stderr, "UART error: port not defined.\r\n");
-        return ERR_INVALID_HANDLE;
+		return ERR_INVALID_HANDLE;
+	}
+
+	if (unistd::access(mPort, F_OK) != 0)
+	{
+		fprintf(stderr, "Error: file %s no exists.\r\n", mPort);
+		return ERR_INVALID_HANDLE;
 	}
 
 	tty_fd = fcntl::open(mPort, O_RDWR/* | O_NONBLOCK*/);
 	if (tty_fd == 0)
 	{
 		fprintf(stderr, "Error: open with %s.\r\n", mPort);
-        return ERR_INVALID_HANDLE;
+		return ERR_INVALID_HANDLE;
 	}
 	printf("Open UART port %s success!\r\n", mPort);
 
@@ -198,7 +206,7 @@ int32_t ClientUART::read(void* buffer, int32_t size)
 		if (n < 0)
 		{
 #if DEBUG_READ
-			printf("Read error UART data!\r\n");
+			printf("Read error UART data! %d,%d,%s\r\n", tty_fd, n, strerror(errno));
 #endif
 			return n;
 		}
