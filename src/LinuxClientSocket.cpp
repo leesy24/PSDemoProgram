@@ -62,6 +62,17 @@ mTimeout(0)
     	perror("socket failed");
         fprintf(stderr, "cannot create sockets.\r\n");
     }
+
+#if 0
+	/* setsockopt: Handy debugging trick that lets 
+	* us rerun the server immediately after we kill it; 
+	* otherwise we have to wait about 20 secs. 
+	* Eliminates "ERROR on binding: Address already in use" error. 
+	*/
+	int optval; /* flag value for setsockopt */
+	optval = 1;
+	setsockopt(mSocketHandle, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, (const void *)&optval , sizeof(int));
+#endif
 }
 
 /*
