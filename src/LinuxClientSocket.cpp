@@ -167,14 +167,10 @@ ErrorID_t
 ClientSocket::open()
 {
     int32_t status = 0;
+    struct timeval          tv;
 
-    // typesafe cast.
-    union
-    {
-        struct timeval asTimeVal;
-        char asChar[sizeof(asTimeVal)];
-    }lTimeout;
-    lTimeout.asTimeVal.tv_sec = mTimeout;
+    tv.tv_sec       = mTimeout;
+    tv.tv_usec      = 0;
 
     // bind port
     status = bind(mSocketHandle, (struct sockaddr*) &mClientIPAddress, sizeof(mClientIPAddress));
@@ -195,7 +191,7 @@ ClientSocket::open()
     }
 
     // set timeout
-    status = setsockopt(mSocketHandle, SOL_SOCKET, SO_RCVTIMEO, lTimeout.asChar, sizeof(lTimeout));
+    status = setsockopt(mSocketHandle, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
     if (0 > status)
     {
     	perror("setsockopt failed");
